@@ -1,4 +1,4 @@
-import { env } from './infrastructure/config/env';
+import { env } from "./infrastructure/config/env";
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -92,14 +92,12 @@ const createApp = (): Application => {
   // app.use(globalLimiter);
 
   app.get("/health", (_req: Request, res: Response) => {
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Brift API is running 🚀",
-        environment: env.NODE_ENV,
-        timestamp: new Date().toISOString(),
-      });
+    res.status(200).json({
+      success: true,
+      message: "Brift API is running 🚀",
+      environment: env.NODE_ENV,
+      timestamp: new Date().toISOString(),
+    });
   });
 
   app.use("/api/v1/auth", authLimiter, authRoutes);

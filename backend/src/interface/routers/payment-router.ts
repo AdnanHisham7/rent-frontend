@@ -1,24 +1,26 @@
-import { Router } from 'express';
-import { PaymentController } from '../controllers/payment-controller';
-import { authenticate } from '../middleware/auth-middleware';
+import { Router } from "express";
+import { PaymentController } from "../controllers/payment-controller";
+import { authenticate } from "../middleware/auth-middleware";
 
-export const createPaymentRouter = (paymentController: PaymentController): Router => {
+export const createPaymentRouter = (
+  paymentController: PaymentController,
+): Router => {
   const router = Router();
 
   router.post(
-    '/checkout',
+    "/checkout",
     authenticate,
-    paymentController.createCheckoutSession.bind(paymentController)
+    paymentController.createCheckoutSession.bind(paymentController),
   );
 
   router.post(
-    '/public-checkout',
-    paymentController.publicCheckout.bind(paymentController)
+    "/public-checkout",
+    paymentController.publicCheckout.bind(paymentController),
   );
 
   router.post(
-    '/webhook',
-    paymentController.handleWebhook.bind(paymentController)
+    "/webhook",
+    paymentController.handleWebhook.bind(paymentController),
   );
 
   return router;

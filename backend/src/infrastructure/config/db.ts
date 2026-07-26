@@ -1,4 +1,4 @@
-import { logger } from '../../shared/logger/logger';
+import { logger } from "../../shared/logger/logger";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 

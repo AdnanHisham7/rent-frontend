@@ -6,8 +6,8 @@ export class AppError extends Error {
   constructor(
     message: string,
     statusCode: number,
-    suggestion = 'Please try again later or contact support.',
-    isOperational = true
+    suggestion = "Please try again later or contact support.",
+    isOperational = true,
   ) {
     super(message);
     this.statusCode = statusCode;
@@ -19,31 +19,46 @@ export class AppError extends Error {
 }
 
 export class NotFoundError extends AppError {
-  constructor(message = 'Resource not found', suggestion = 'Please check your input and try again.') {
+  constructor(
+    message = "Resource not found",
+    suggestion = "Please check your input and try again.",
+  ) {
     super(message, 404, suggestion);
   }
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message = 'Unauthorized', suggestion = 'Please login and try again.') {
+  constructor(
+    message = "Unauthorized",
+    suggestion = "Please login and try again.",
+  ) {
     super(message, 401, suggestion);
   }
 }
 
 export class BadRequestError extends AppError {
-  constructor(message = 'Bad request', suggestion = 'Please check your input and try again.') {
+  constructor(
+    message = "Bad request",
+    suggestion = "Please check your input and try again.",
+  ) {
     super(message, 400, suggestion);
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = 'Forbidden', suggestion = 'You do not have permission to perform this action.') {
+  constructor(
+    message = "Forbidden",
+    suggestion = "You do not have permission to perform this action.",
+  ) {
     super(message, 403, suggestion);
   }
 }
 
 export class PaymentRequiredError extends AppError {
-  constructor(message = 'Payment Required', suggestion = 'Please upgrade your subscription or pay for additional resources.') {
+  constructor(
+    message = "Payment Required",
+    suggestion = "Please upgrade your subscription or pay for additional resources.",
+  ) {
     super(message, 402, suggestion);
   }
 }

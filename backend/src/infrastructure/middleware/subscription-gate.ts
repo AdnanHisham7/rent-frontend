@@ -1,7 +1,10 @@
-import { logger } from '../../shared/logger/logger';
-import type { Request, Response, NextFunction } from 'express';
-import { SubscriptionModel, SubscriptionPeriodModel } from '../db/model/subscription-model';
-import mongoose from 'mongoose';
+import { logger } from "../../shared/logger/logger";
+import type { Request, Response, NextFunction } from "express";
+import {
+  SubscriptionModel,
+  SubscriptionPeriodModel,
+} from "../db/model/subscription-model";
+import mongoose from "mongoose";
 
 /**
  * requireActiveSubscription middleware
@@ -16,26 +19,33 @@ import mongoose from 'mongoose';
 export const requireActiveSubscription = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const user = req.user;
-    if (!user) { res.status(401).json({ message: 'Unauthenticated.' }); return; }
+    if (!user) {
+      res.status(401).json({ message: "Unauthenticated." });
+      return;
+    }
 
-    if (user.role === 'super_admin') { next(); return; }
+    if (user.role === "super_admin") {
+      next();
+      return;
+    }
 
     const userId = new mongoose.Types.ObjectId(user.userId);
 
     const sub = await SubscriptionModel.findOne({
       userId,
-      status: 'active',
+      status: "active",
     }).lean();
 
     if (!sub) {
       res.status(402).json({
-        message:    'No active subscription found.',
-        suggestion: 'Contact your administrator to activate or renew your subscription.',
-        code:       'SUBSCRIPTION_INACTIVE',
+        message: "No active subscription found.",
+        suggestion:
+          "Contact your administrator to activate or renew your subscription.",
+        code: "SUBSCRIPTION_INACTIVE",
       });
       return;
     }
@@ -43,23 +53,24 @@ export const requireActiveSubscription = async (
     const now = new Date();
     const activePeriod = await SubscriptionPeriodModel.findOne({
       subscriptionId: sub._id,
-      status:         'paid',
-      periodStart:    { $lte: now },
-      periodEnd:      { $gte: now },
+      status: "paid",
+      periodStart: { $lte: now },
+      periodEnd: { $gte: now },
     }).lean();
 
     if (!activePeriod) {
       res.status(402).json({
-        message:    'Your subscription payment for the current period is pending.',
-        suggestion: 'Please pay for the current billing period to regain access.',
-        code:       'SUBSCRIPTION_PERIOD_UNPAID',
+        message: "Your subscription payment for the current period is pending.",
+        suggestion:
+          "Please pay for the current billing period to regain access.",
+        code: "SUBSCRIPTION_PERIOD_UNPAID",
       });
       return;
     }
 
     next();
   } catch (err) {
-    logger.error('[requireActiveSubscription] Error:', err);
+    logger.error("[requireActiveSubscription] Error:", err);
     next();
   }
 };

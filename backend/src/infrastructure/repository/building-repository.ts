@@ -1,7 +1,10 @@
-import type { IBuilding } from '../../domain/entities/Building';
-import type { IBuildingRepository, BuildingListFilter } from '../../domain/repository/building-repository-impl';
-import { BuildingModel } from '../db/model/building-model';
-import mongoose from 'mongoose';
+import type { IBuilding } from "../../domain/entities/Building";
+import type {
+  IBuildingRepository,
+  BuildingListFilter,
+} from "../../domain/repository/building-repository-impl";
+import { BuildingModel } from "../db/model/building-model";
+import mongoose from "mongoose";
 
 export class BuildingRepository implements IBuildingRepository {
   private toStringId(doc: { _id: unknown }): string {
@@ -12,8 +15,8 @@ export class BuildingRepository implements IBuildingRepository {
     const obj = doc.toObject ? doc.toObject() : { ...doc };
     return {
       ...obj,
-      _id:       this.toStringId(obj),
-      ownerId:   obj.ownerId?.toString()   ?? '',
+      _id: this.toStringId(obj),
+      ownerId: obj.ownerId?.toString() ?? "",
       managerId: obj.managerId?.toString() ?? undefined,
       documents: (obj.documents ?? []).map((d: any) => d?.toString()),
     };
@@ -22,17 +25,24 @@ export class BuildingRepository implements IBuildingRepository {
   private buildQuery(filter?: BuildingListFilter): Record<string, any> {
     const query: Record<string, any> = {};
     if (!filter) return query;
-    if (filter.ownerId)    query.ownerId   = filter.ownerId;
-    if (filter.managerId)  query.managerId = filter.managerId;
-    if (filter.status)     query.status    = filter.status;
-    if (filter.type)       query.type      = filter.type;
-    if (filter.isPublished !== undefined) query.isPublished = filter.isPublished;
-    if (filter.isFeatured  !== undefined) query.isFeatured  = filter.isFeatured;
-    if (filter.city)       query['location.city']  = new RegExp(filter.city.trim(), 'i');
-    if (filter.state)      query['location.state'] = new RegExp(filter.state.trim(), 'i');
+    if (filter.ownerId) query.ownerId = filter.ownerId;
+    if (filter.managerId) query.managerId = filter.managerId;
+    if (filter.status) query.status = filter.status;
+    if (filter.type) query.type = filter.type;
+    if (filter.isPublished !== undefined)
+      query.isPublished = filter.isPublished;
+    if (filter.isFeatured !== undefined) query.isFeatured = filter.isFeatured;
+    if (filter.city)
+      query["location.city"] = new RegExp(filter.city.trim(), "i");
+    if (filter.state)
+      query["location.state"] = new RegExp(filter.state.trim(), "i");
     if (filter.search) {
-      const re = new RegExp(filter.search.trim(), 'i');
-      query.$or = [{ name: re }, { 'location.city': re }, { 'location.address': re }];
+      const re = new RegExp(filter.search.trim(), "i");
+      query.$or = [
+        { name: re },
+        { "location.city": re },
+        { "location.address": re },
+      ];
     }
     return query;
   }
@@ -67,11 +77,18 @@ export class BuildingRepository implements IBuildingRepository {
   }
 
   async findAll(filter?: BuildingListFilter): Promise<IBuilding[]> {
-    const docs = await BuildingModel.find(this.buildQuery(filter)).sort({ createdAt: -1 }).lean();
+    const docs = await BuildingModel.find(this.buildQuery(filter))
+      .sort({ createdAt: -1 })
+      .lean();
     return docs.map((d) => this.toEntity(d));
   }
 
-  async findAllPaginated(filter: BuildingListFilter, skip: number, limit: number, sort: Record<string, 1|-1> = { createdAt: -1 }): Promise<{ data: IBuilding[]; total: number }> {
+  async findAllPaginated(
+    filter: BuildingListFilter,
+    skip: number,
+    limit: number,
+    sort: Record<string, 1 | -1> = { createdAt: -1 },
+  ): Promise<{ data: IBuilding[]; total: number }> {
     const query = this.buildQuery(filter);
     const [docs, total] = await Promise.all([
       BuildingModel.find(query).sort(sort).skip(skip).limit(limit).lean(),
@@ -89,18 +106,30 @@ export class BuildingRepository implements IBuildingRepository {
     return BuildingModel.countDocuments(this.buildQuery(filter));
   }
 
-  async create(data: Omit<IBuilding, '_id' | 'createdAt' | 'updatedAt'>): Promise<IBuilding> {
+  async create(
+    data: Omit<IBuilding, "_id" | "createdAt" | "updatedAt">,
+  ): Promise<IBuilding> {
     const doc = await BuildingModel.create(data);
     return this.toEntity(doc);
   }
 
-  async update(id: string, data: Partial<IBuilding>): Promise<IBuilding | null> {
-    const doc = await BuildingModel.findByIdAndUpdate(id, { $set: data }, { new: true }).lean();
+  async update(
+    id: string,
+    data: Partial<IBuilding>,
+  ): Promise<IBuilding | null> {
+    const doc = await BuildingModel.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true },
+    ).lean();
     if (!doc) return null;
     return this.toEntity(doc);
   }
 
-  async incrementFields(id: string, fields: Partial<Record<'totalFloors' | 'totalUnits' | 'viewCount', number>>): Promise<void> {
+  async incrementFields(
+    id: string,
+    fields: Partial<Record<"totalFloors" | "totalUnits" | "viewCount", number>>,
+  ): Promise<void> {
     await BuildingModel.updateOne({ _id: id }, { $inc: fields });
   }
 
@@ -114,7 +143,9 @@ export class BuildingRepository implements IBuildingRepository {
   }
 
   async distinctCities(): Promise<string[]> {
-    const cities = await BuildingModel.distinct('location.city', { isPublished: true });
+    const cities = await BuildingModel.distinct("location.city", {
+      isPublished: true,
+    });
     return (cities as string[]).filter(Boolean).sort();
   }
 }

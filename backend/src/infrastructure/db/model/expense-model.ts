@@ -1,88 +1,100 @@
-import mongoose, { Document, Schema } from 'mongoose';
-import { IExpense } from '../../../domain/entities/Expence';
+import mongoose, { Document, Schema } from "mongoose";
+import { IExpense } from "../../../domain/entities/Expense";
 
-export interface IExpenseDocument extends Omit<IExpense, '_id'>, Document {}
+export interface IExpenseDocument extends Omit<IExpense, "_id">, Document {}
 
 const ExpenseSchema = new Schema<IExpenseDocument>(
   {
     buildingId: {
-      type:     Schema.Types.ObjectId,
-      ref:      'Building',
+      type: Schema.Types.ObjectId,
+      ref: "Building",
       required: true,
-      index:    true,
+      index: true,
     } as any,
     unitId: {
-      type:    Schema.Types.ObjectId,
-      ref:     'Unit',
+      type: Schema.Types.ObjectId,
+      ref: "Unit",
       default: null,
-      index:   true,
+      index: true,
     } as any,
     category: {
-      type:     String,
+      type: String,
       required: true,
-      enum:     [
-        'repair', 'utility', 'salary', 'tax', 'renovation',
-        'cleaning', 'insurance', 'security', 'commission',
-        'legal', 'marketing', 'other',
+      enum: [
+        "repair",
+        "utility",
+        "salary",
+        "tax",
+        "renovation",
+        "cleaning",
+        "insurance",
+        "security",
+        "commission",
+        "legal",
+        "marketing",
+        "other",
       ],
       index: true,
     },
     title: {
-      type:     String,
+      type: String,
       required: true,
-      trim:     true,
+      trim: true,
     },
     description: {
-      type:    String,
+      type: String,
       default: null,
-      trim:    true,
+      trim: true,
     },
     amount: {
-      type:     Number,
+      type: Number,
       required: true,
-      min:      0,
+      min: 0,
     },
     date: {
-      type:     Date,
+      type: Date,
       required: true,
-      index:    true,         // indexed for fast date-range queries
+      index: true, // indexed for fast date-range queries
     },
     status: {
-      type:    String,
-      enum:    ['pending', 'paid', 'cancelled'],
-      default: 'paid',       // default paid — most expenses are logged after payment
-      index:   true,
+      type: String,
+      enum: ["pending", "paid", "cancelled"],
+      default: "paid", // default paid — most expenses are logged after payment
+      index: true,
     },
     method: {
-      type:     String,
+      type: String,
       required: true,
-      enum:     ['cash', 'bank_transfer', 'upi', 'cheque', 'card'],
+      enum: ["cash", "bank_transfer", "upi", "cheque", "card"],
     },
     paidTo: {
-      type:    String,
+      type: String,
       default: null,
-      trim:    true,
+      trim: true,
     },
     receiptUrl: {
-      type:    String,
+      type: String,
       default: null,
     },
     invoiceNumber: {
-      type:    String,
+      type: String,
       default: null,
-      trim:    true,
+      trim: true,
     },
     recordedBy: {
-      type:     Schema.Types.ObjectId,
-      ref:      'User',
+      type: Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     } as any,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Compound index for fast date range + building queries
 ExpenseSchema.index({ buildingId: 1, date: -1 });
 ExpenseSchema.index({ buildingId: 1, category: 1, date: -1 });
 
-export const ExpenseModel = mongoose.model<IExpenseDocument>('Expense', ExpenseSchema);
+export const ExpenseModel = mongoose.model<IExpenseDocument>(
+  "Expense",
+  ExpenseSchema,
+);

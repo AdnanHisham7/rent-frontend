@@ -1,8 +1,8 @@
 export interface IRole {
-  _id?:         string;
-  name:         string; 
-  description:  string;
+  _id?: string;
+  name: string;
+  description: string;
   isSystemRole: boolean;
-  createdAt?:   Date;
-  updatedAt?:   Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

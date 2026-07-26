@@ -1,18 +1,24 @@
-import { ExpenseCategory, IExpense } from "../entities/Expence";
+import { ExpenseCategory, IExpense } from "../entities/Expense";
 
 export interface IExpenseRepository {
   findById(id: string): Promise<IExpense | null>;
 
-  findAll(filter?: Partial<Pick<IExpense, 'buildingId' | 'unitId' | 'category' | 'status'>>): Promise<IExpense[]>;
+  findAll(
+    filter?: Partial<
+      Pick<IExpense, "buildingId" | "unitId" | "category" | "status">
+    >,
+  ): Promise<IExpense[]>;
 
   findByDateRange(
     buildingId: string,
     from: Date,
     to: Date,
-    category?: ExpenseCategory
+    category?: ExpenseCategory,
   ): Promise<IExpense[]>;
 
-  create(data: Omit<IExpense, '_id' | 'createdAt' | 'updatedAt'>): Promise<IExpense>;
+  create(
+    data: Omit<IExpense, "_id" | "createdAt" | "updatedAt">,
+  ): Promise<IExpense>;
 
   update(id: string, data: Partial<IExpense>): Promise<IExpense | null>;
 
@@ -24,19 +30,19 @@ export interface IExpenseRepository {
   getTotalByCategory(
     buildingId: string,
     from: Date,
-    to: Date
+    to: Date,
   ): Promise<{ category: ExpenseCategory; total: number }[]>;
 
   // Aggregation: daily totals for chart
   getDailyTotals(
     buildingId: string,
     from: Date,
-    to: Date
+    to: Date,
   ): Promise<{ date: string; total: number }[]>;
 
   // Aggregation: monthly totals for chart
   getMonthlyTotals(
     buildingId: string,
-    year: number
+    year: number,
   ): Promise<{ month: number; total: number }[]>;
 }
