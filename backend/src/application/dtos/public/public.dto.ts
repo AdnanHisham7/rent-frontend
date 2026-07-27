@@ -43,6 +43,10 @@ export interface PublicUnitDetailDTO extends PublicUnitDTO {
   };
 }
 
+export interface PublicNearbyBuildingDTO extends PublicBuildingCardDTO {
+  distanceKm: number;
+}
+
 export interface PublicFiltersDTO {
   cities: string[];
   types: string[];

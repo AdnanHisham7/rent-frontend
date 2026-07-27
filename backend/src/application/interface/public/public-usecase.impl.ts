@@ -5,6 +5,7 @@ import {
   PublicFiltersDTO,
   PublicUnitDetailDTO,
   PublicUnitDTO,
+  PublicNearbyBuildingDTO,
 } from "../../dtos/public/public.dto";
 
 export interface PublicBuildingListFilter {
@@ -29,4 +30,10 @@ export interface IPublicUseCases {
   listUnitsForBuilding(buildingId: string): Promise<PublicUnitDTO[]>;
   getUnitDetail(id: string): Promise<PublicUnitDetailDTO>;
   getFilters(): Promise<PublicFiltersDTO>;
+  getNearbyBuildings(
+    lat: number,
+    lng: number,
+    radiusKm: number,
+    limit: number,
+  ): Promise<PublicNearbyBuildingDTO[]>;
 }

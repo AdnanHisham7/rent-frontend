@@ -102,6 +102,29 @@ export class BuildingRepository implements IBuildingRepository {
     return docs.map((d) => this.toEntity(d));
   }
 
+  async findWithinBounds(bounds: {
+    minLat: number;
+    maxLat: number;
+    minLng: number;
+    maxLng: number;
+  }): Promise<IBuilding[]> {
+    const docs = await BuildingModel.find({
+      isPublished: true,
+      status: "active",
+      "location.latitude": {
+        $gte: bounds.minLat,
+        $lte: bounds.maxLat,
+        $ne: null,
+      },
+      "location.longitude": {
+        $gte: bounds.minLng,
+        $lte: bounds.maxLng,
+        $ne: null,
+      },
+    }).lean();
+    return docs.map((d) => this.toEntity(d));
+  }
+
   async countAll(filter?: BuildingListFilter): Promise<number> {
     return BuildingModel.countDocuments(this.buildQuery(filter));
   }

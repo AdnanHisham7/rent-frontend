@@ -15,12 +15,10 @@ export class PublicController {
         .status(error.statusCode)
         .json({ message: error.message, suggestion: error.suggestion });
     }
-    return res
-      .status(500)
-      .json({
-        message: fallback,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+    return res.status(500).json({
+      message: fallback,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 
   listBuildings = async (req: Request, res: Response): Promise<Response> => {
@@ -112,6 +110,21 @@ export class PublicController {
       return res.status(200).json({ data });
     } catch (error) {
       return this.handleError(res, error, "Failed to fetch filters.");
+    }
+  };
+
+  getNearby = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const lat = Number(req.query.lat);
+      const lng = Number(req.query.lng);
+      const radiusKm =
+        req.query.radiusKm !== undefined ? Number(req.query.radiusKm) : 10;
+      const limit =
+        req.query.limit !== undefined ? Number(req.query.limit) : 10;
+      const data = await this.uc.getNearbyBuildings(lat, lng, radiusKm, limit);
+      return res.status(200).json({ data });
+    } catch (error) {
+      return this.handleError(res, error, "Failed to fetch nearby listings.");
     }
   };
 }

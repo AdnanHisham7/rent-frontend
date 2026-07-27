@@ -3,7 +3,10 @@ import { IUnitRepository } from "../../../domain/repository/unit-repository-impl
 import { IFloorRepository } from "../../../domain/repository/floor-repository-impl";
 import { IOfferRepository } from "../../../domain/repository/offer-repository-impl";
 import { IOffer } from "../../../domain/entities/Offer";
-import { NotFoundError } from "../../../shared/error/app-error";
+import {
+  BadRequestError,
+  NotFoundError,
+} from "../../../shared/error/app-error";
 import {
   IPublicUseCases,
   PublicBuildingListFilter,
@@ -15,6 +18,7 @@ import {
   PublicUnitDetailDTO,
   PublicUnitDTO,
   PublicUnitOfferDTO,
+  PublicNearbyBuildingDTO,
 } from "../../dtos/public/public.dto";
 import { PaginatedResult } from "../../dtos/super-admin/super-admin.dto";
 import { IBuilding } from "../../../domain/entities/Building";
@@ -59,6 +63,23 @@ function buildingCard(b: IBuilding, units: IUnit[]): PublicBuildingCardDTO {
     minRent: rents.length ? Math.min(...rents) : null,
     maxRent: rents.length ? Math.max(...rents) : null,
   };
+}
+
+function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 export class PublicUseCases implements IPublicUseCases {
@@ -241,5 +262,77 @@ export class PublicUseCases implements IPublicUseCases {
       cities,
       types: ["residential", "commercial", "mixed", "industrial"],
     };
+  }
+
+  async getNearbyBuildings(
+    lat: number,
+    lng: number,
+    radiusKm: number,
+    limit: number,
+  ): Promise<PublicNearbyBuildingDTO[]> {
+    if (
+      typeof lat !== "number" ||
+      typeof lng !== "number" ||
+      Number.isNaN(lat) ||
+      Number.isNaN(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180
+    ) {
+      throw new BadRequestError(
+        "Valid lat and lng query parameters are required.",
+      );
+    }
+
+    const clampedRadius = Math.min(Math.max(radiusKm || 10, 1), 100);
+    const clampedLimit = Math.min(Math.max(limit || 10, 1), 50);
+
+    const latDelta = clampedRadius / 111;
+    const lngDelta =
+      clampedRadius / (111 * Math.cos((lat * Math.PI) / 180) || 1);
+
+    const candidates = await this.buildingRepo.findWithinBounds({
+      minLat: lat - latDelta,
+      maxLat: lat + latDelta,
+      minLng: lng - lngDelta,
+      maxLng: lng + lngDelta,
+    });
+
+    const withDistance = candidates
+      .filter(
+        (b) =>
+          typeof b.location?.latitude === "number" &&
+          typeof b.location?.longitude === "number",
+      )
+      .map((b) => ({
+        building: b,
+        distanceKm: haversineKm(
+          lat,
+          lng,
+          b.location.latitude as number,
+          b.location.longitude as number,
+        ),
+      }))
+      .filter((x) => x.distanceKm <= clampedRadius)
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, clampedLimit);
+
+    if (!withDistance.length) return [];
+
+    const units = await this.unitRepo.findByBuildingIds(
+      withDistance.map((x) => x.building._id!),
+    );
+    const unitsByBuilding = new Map<string, IUnit[]>();
+    for (const u of units) {
+      const arr = unitsByBuilding.get(u.buildingId) ?? [];
+      arr.push(u);
+      unitsByBuilding.set(u.buildingId, arr);
+    }
+
+    return withDistance.map(({ building, distanceKm }) => ({
+      ...buildingCard(building, unitsByBuilding.get(building._id!) ?? []),
+      distanceKm: Math.round(distanceKm * 10) / 10,
+    }));
   }
 }

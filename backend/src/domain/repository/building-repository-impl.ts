@@ -24,6 +24,12 @@ export interface IBuildingRepository {
     limit: number,
     sort?: Record<string, 1 | -1>,
   ): Promise<{ data: IBuilding[]; total: number }>;
+  findWithinBounds(bounds: {
+    minLat: number;
+    maxLat: number;
+    minLng: number;
+    maxLng: number;
+  }): Promise<IBuilding[]>;
   findByOwnerId(ownerId: string): Promise<IBuilding[]>;
   countAll(filter?: BuildingListFilter): Promise<number>;
   create(

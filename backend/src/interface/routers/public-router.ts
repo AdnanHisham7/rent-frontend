@@ -10,6 +10,7 @@ export const createPublicRouter = (controller: PublicController): Router => {
   router.get("/buildings/:id/units", controller.listUnits);
   router.get("/units/:id", controller.getUnitDetail);
   router.get("/filters", controller.getFilters);
+  router.get("/nearby", controller.getNearby);
 
   return router;
 };
