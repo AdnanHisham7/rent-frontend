@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Phone, Mail, CreditCard, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, ConfirmDialog } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetMySubscriptionQuery, useGetMyPeriodsQuery } from '@/store/api/subscriptionApi';
 
@@ -21,6 +22,18 @@ export default function SubscriptionExpiredPage() {
   const { user, logout } = useAuth();
   const { data: subData }     = useGetMySubscriptionQuery();
   const { data: periodsData } = useGetMyPeriodsQuery(undefined, { skip: !subData?.data });
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleConfirmLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+      setConfirmLogoutOpen(false);
+    }
+  };
 
   const sub     = subData?.data;
   const periods = periodsData?.data ?? [];
@@ -143,11 +156,21 @@ export default function SubscriptionExpiredPage() {
             <RefreshCw className="size-4" />
             Refresh status
           </Button>
-          <Button variant="ghost" onClick={() => logout()} className="w-full text-ink-faint">
+          <Button variant="ghost" onClick={() => setConfirmLogoutOpen(true)} className="w-full text-ink-faint">
             Sign out
           </Button>
         </div>
       </motion.div>
+
+      <ConfirmDialog
+        open={confirmLogoutOpen}
+        onClose={() => setConfirmLogoutOpen(false)}
+        onConfirm={handleConfirmLogout}
+        title="Sign out?"
+        description="You'll need to log in again to access your dashboard."
+        confirmLabel="Sign out"
+        loading={loggingOut}
+      />
     </div>
   );
 }

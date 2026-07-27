@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Menu, LogOut, User, Check, ArrowUpCircle, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar } from '@/components/ui/Avatar';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   useGetNotificationsQuery,
   useGetUnreadCountQuery,
@@ -33,6 +34,11 @@ function notificationIcon(type?: string) {
 
 function notificationAction(n: AppNotification, role: string, navigate: ReturnType<typeof useNavigate>) {
   const meta = n.metadata as Record<string, string> | undefined;
+
+  if (meta?.link) {
+    navigate(meta.link);
+    return;
+  }
   if (n.notificationType === 'upgrade_request' && role === 'super_admin') {
     navigate('/super-admin/upgrade-requests');
     return;
@@ -158,10 +164,22 @@ function NotificationBell() {
 
 function UserMenu() {
   const [open, setOpen] = useState(false);
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useClickOutside(ref, () => setOpen(false));
   const { user, logout } = useAuth();
   const isSuperAdmin = user?.role === 'super_admin';
+
+  const handleConfirmLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+      setConfirmLogoutOpen(false);
+    }
+  };
 
   return (
     <div className="relative" ref={ref}>
@@ -206,7 +224,10 @@ function UserMenu() {
               </Link>
             )}
             <button
-              onClick={() => logout()}
+              onClick={() => {
+                setOpen(false);
+                setConfirmLogoutOpen(true);
+              }}
               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-crimson-600 transition hover:bg-crimson-50"
             >
               <LogOut className="size-4" /> Sign out
@@ -214,6 +235,16 @@ function UserMenu() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={confirmLogoutOpen}
+        onClose={() => setConfirmLogoutOpen(false)}
+        onConfirm={handleConfirmLogout}
+        title="Sign out?"
+        description="You'll need to log in again to access your dashboard."
+        confirmLabel="Sign out"
+        loading={loggingOut}
+      />
     </div>
   );
 }
