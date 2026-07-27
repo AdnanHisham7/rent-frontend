@@ -162,6 +162,7 @@ export class BookingUseCases implements IBookingUseCases {
           notificationType: NotificationType.GENERAL,
           channel: NotificationChannel.EMAIL,
           buildingId: building._id,
+          link: `/dashboard/bookings/${booking._id}`,
         })
         .catch((err) => logger.error("Failed to notify owner:", err));
 
@@ -249,6 +250,7 @@ export class BookingUseCases implements IBookingUseCases {
         notificationType: NotificationType.GENERAL,
         channel: NotificationChannel.EMAIL,
         buildingId: booking.buildingId,
+        link: `/dashboard/bookings/${booking._id}`,
       })
       .catch((err) => logger.error("Failed to notify owner:", err));
 
@@ -530,6 +532,7 @@ export class BookingUseCases implements IBookingUseCases {
           notificationType: NotificationType.GENERAL,
           channel: NotificationChannel.EMAIL,
           buildingId: booking.buildingId,
+          link: `/dashboard/bookings/${booking._id}`,
         })
         .catch((err) => logger.error("Failed to notify owner:", err));
     }

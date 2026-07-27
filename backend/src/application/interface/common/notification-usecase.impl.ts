@@ -12,6 +12,8 @@ export interface SendMultiChannelNotificationDTO {
   channel?: NotificationChannel;
   buildingId?: string;
   tenantId?: string;
+  link?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface INotificationUseCase {

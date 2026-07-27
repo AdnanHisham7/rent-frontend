@@ -102,6 +102,7 @@ export class InquiryUseCases implements IInquiryUseCases {
         notificationType: NotificationType.GENERAL,
         channel: NotificationChannel.EMAIL,
         buildingId: building._id,
+        link: `/dashboard/inquiries/${inquiry._id}`,
       })
       .catch((err) =>
         logger.error("Failed to notify owner of new inquiry:", err),

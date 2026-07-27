@@ -49,7 +49,9 @@ export class NotificationUseCase implements INotificationUseCase {
       channel = NotificationChannel.IN_APP,
       buildingId,
       tenantId,
-    } = data as any;
+      link,
+      metadata,
+    } = data;
 
     const promises: Promise<any>[] = [];
 
@@ -62,6 +64,7 @@ export class NotificationUseCase implements INotificationUseCase {
         channel,
         buildingId,
         tenantId,
+        metadata: link ? { ...(metadata ?? {}), link } : metadata,
       }),
     );
 
