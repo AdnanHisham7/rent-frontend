@@ -11,7 +11,7 @@ import { useGetPublicBuildingDetailQuery, useGetPublicBuildingUnitsQuery } from 
 import { useCreateInquiryMutation } from '@/store/api/inquiryApi';
 import { PageLoader } from '@/components/ui/Avatar';
 import { formatCurrency } from '@/utils/format';
-import type { Unit } from '@/types/building';
+import type { PublicUnit } from '@/types/platform';
 
 // ── Image slider with auto-advance + dot navigation ──────────────────────────
 function ImageSlider({ images, alt }: { images: string[]; alt: string }) {
@@ -74,7 +74,7 @@ function ImageSlider({ images, alt }: { images: string[]; alt: string }) {
 }
 
 // ── Room detail card shown when a room tile is clicked ────────────────────────
-function RoomCard({ unit, onClose }: { unit: Unit; onClose: () => void }) {
+function RoomCard({ unit, onClose }: { unit: PublicUnit; onClose: () => void }) {
   const [imgIdx, setImgIdx] = useState(0);
   const images = unit.images ?? [];
   return (
@@ -82,7 +82,15 @@ function RoomCard({ unit, onClose }: { unit: Unit; onClose: () => void }) {
       <Card padding="md" className="border-crimson-200">
         <p className="mb-0.5 text-xs font-medium text-crimson-500">Selected room</p>
         <p className="font-mono text-base font-semibold text-ink">{unit.unitNumber}</p>
-        <p className="text-sm text-ink-soft">{unit.bedrooms}BR / {unit.bathrooms}BA · {formatCurrency(unit.rentAmount)}/mo</p>
+        {unit.activeOffer ? (
+          <p className="text-sm text-ink-soft">
+            {unit.bedrooms}BR / {unit.bathrooms}BA ·{' '}
+            <span className="font-semibold text-crimson-600">{formatCurrency(unit.effectiveRent)}/mo</span>{' '}
+            <span className="text-ink-faint line-through">{formatCurrency(unit.rentAmount)}</span>
+          </p>
+        ) : (
+          <p className="text-sm text-ink-soft">{unit.bedrooms}BR / {unit.bathrooms}BA · {formatCurrency(unit.rentAmount)}/mo</p>
+        )}
 
         {/* Room description */}
         {unit.description && <p className="mt-2 text-xs text-ink-faint">{unit.description}</p>}
@@ -126,7 +134,7 @@ export default function BuildingDetailPage() {
   const { data, isLoading } = useGetPublicBuildingDetailQuery(slug!, { skip: !slug });
   const { data: unitsData }  = useGetPublicBuildingUnitsQuery(slug!, { skip: !slug });
   const [createInquiry, { isLoading: sending }] = useCreateInquiryMutation();
-  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<PublicUnit | null>(null);
   const { register, handleSubmit, reset } = useForm<{ name: string; email: string; phone: string; message: string }>();
 
   if (isLoading) return <PageLoader />;
@@ -134,7 +142,7 @@ export default function BuildingDetailPage() {
   const b = data.data;
   const units = unitsData?.data ?? [];
 
-  const unitsByFloor = new Map<string, Unit[]>();
+  const unitsByFloor = new Map<string, PublicUnit[]>();
   for (const u of units) {
     const arr = unitsByFloor.get(u.floorNumber) ?? [];
     arr.push(u);
@@ -196,7 +204,7 @@ export default function BuildingDetailPage() {
                     units={unitsByFloor.get(floor.floorNumber.toString()) ?? []}
                     index={i}
                     editable={false}
-                    onRoomClick={u => setSelectedUnit(u)}
+                    onRoomClick={u => setSelectedUnit(u as PublicUnit)}
                   />
                 ))}
               </AnimatePresence>
