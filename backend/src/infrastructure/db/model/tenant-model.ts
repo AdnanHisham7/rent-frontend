@@ -73,6 +73,10 @@ const TenantSchema = new Schema<ITenantDocument>(
       default: null,
     } as any,
     terms: { type: String, default: null },
+    portalEnabled: { type: Boolean, default: false },
+    password: { type: String, default: null },
+    passwordSetAt: { type: Date, default: null },
+    portalActivatedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

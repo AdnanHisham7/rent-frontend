@@ -64,6 +64,7 @@ export interface TenantResponseDTO {
   vacateDate?: Date;
   paidAt?: Date;
   terms?: string;
+  portalEnabled: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

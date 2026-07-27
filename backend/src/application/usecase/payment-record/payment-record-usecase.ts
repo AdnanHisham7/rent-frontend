@@ -19,7 +19,7 @@ import {
 } from "../../dtos/payment-record/payment-record.dto";
 import { IPaymentRecordUseCases } from "../../interface/payment-record/payment-record-usecase.impl";
 
-function buildPeriod(
+export function buildPeriod(
   rentType: string,
   base: Date,
 ): { label: string; start: Date; end: Date } {

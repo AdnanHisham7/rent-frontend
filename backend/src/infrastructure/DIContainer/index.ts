@@ -61,6 +61,9 @@ import { BookingRepository } from "../repository/booking-repository";
 import { RazorpayService } from "../services/razorpay-service";
 import { BookingUseCases } from "../../application/usecase/booking/booking-usecase";
 import { BookingController } from "../../interface/controllers/booking-controller";
+import { TenantPortalTokenService } from "../services/tenant-portal-token-service";
+import { TenantPortalUseCases } from "../../application/usecase/tenant-portal/tenant-portal-usecase";
+import { TenantPortalController } from "../../interface/controllers/tenant-portal-controller";
 
 const userRepository = new UserRepository();
 const tenantRepository = new TenantRepository();
@@ -85,6 +88,7 @@ const otpService = new RedisOtpService();
 const pdfService = new PdfService();
 const twilioSmsService = new TwilioSmsService();
 const razorpayService = new RazorpayService();
+const tenantPortalTokenService = new TenantPortalTokenService();
 
 const activityLogUseCase = new ActivityLogUsecaseImpl(activityLogRepository);
 const buildingAccessUseCase = new BuildingAccessUseCase(buildingRepository);
@@ -134,6 +138,17 @@ const tenantUseCases = new TenantUseCases(
   tenantRepository,
   unitRepository,
   activityLogUseCase,
+  tenantPortalTokenService,
+  emailService,
+);
+const tenantPortalUseCases = new TenantPortalUseCases(
+  tenantRepository,
+  unitRepository,
+  buildingRepository,
+  paymentRecordRepository,
+  agreementRepository,
+  documentRepository,
+  tenantPortalTokenService,
 );
 const subscriptionUseCases = new SubscriptionUseCases(
   subscriptionRepository,
@@ -254,3 +269,6 @@ export const paymentRecordController = new PaymentRecordController(
   paymentRecordUseCases,
 );
 export const bookingController = new BookingController(bookingUseCases);
+export const tenantPortalController = new TenantPortalController(
+  tenantPortalUseCases,
+);

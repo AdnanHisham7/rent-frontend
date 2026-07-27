@@ -36,6 +36,10 @@ export interface ITenant {
   moveInDate?: Date;
   renewedFromTenantId?: string;
   terms?: string;
+  portalEnabled: boolean;
+  password?: string;
+  passwordSetAt?: Date;
+  portalActivatedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
