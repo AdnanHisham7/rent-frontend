@@ -8,6 +8,9 @@ export const createAnalyticsRouter = () => {
   router.get("/dashboard", authenticate, (req, res) =>
     analyticsController.getDashboardMetrics(req, res),
   );
+  router.get("/trends", authenticate, (req, res) =>
+    analyticsController.getRoomTrends(req, res),
+  );
 
   return router;
 };

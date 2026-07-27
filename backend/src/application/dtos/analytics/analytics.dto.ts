@@ -17,6 +17,37 @@ export interface TransactionRecord {
   createdAt?: Date;
 }
 
+export interface MonthlyTrendPointDTO {
+  month: string;
+  label: string;
+  revenue: number;
+  bookingsCreated: number;
+  bookingsConfirmed: number;
+}
+
+export interface RoomTypeDemandDTO {
+  bedrooms: number;
+  totalUnits: number;
+  occupiedUnits: number;
+  occupancyRatePercentage: number;
+  totalBookings: number;
+  totalInquiries: number;
+}
+
+export interface TopUnitByRevenueDTO {
+  unitId: string;
+  unitNumber: string;
+  buildingId: string;
+  buildingName?: string;
+  totalRevenue: number;
+}
+
+export interface AnalyticsTrendsDTO {
+  monthlyTrend: MonthlyTrendPointDTO[];
+  roomTypeDemand: RoomTypeDemandDTO[];
+  topUnitsByRevenue: TopUnitByRevenueDTO[];
+}
+
 export interface DashboardMetricsDTO {
   totalRevenue: number;
   pendingRevenue: number;

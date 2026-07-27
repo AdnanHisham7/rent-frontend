@@ -1,11 +1,16 @@
 import mongoose from "mongoose";
 import { IAnalyticsRepository } from "../../domain/repository/analytics-repository-impl";
-import { DashboardMetricsDTO } from "../../application/dtos/analytics/analytics.dto";
+import {
+  DashboardMetricsDTO,
+  AnalyticsTrendsDTO,
+} from "../../application/dtos/analytics/analytics.dto";
 import { AgreementModel } from "../db/model/agreement-model";
 import { PaymentRecordModel } from "../db/model/payment-record-model";
 import { TenantModel } from "../db/model/tenant-model";
 import { UnitModel } from "../db/model/unit-model";
 import { BuildingModel } from "../db/model/building-model";
+import { BookingModel } from "../db/model/booking-model";
+import { InquiryModel } from "../db/model/inquiry-model";
 
 export class AnalyticsRepository implements IAnalyticsRepository {
   async getDashboardMetrics(userId: string): Promise<DashboardMetricsDTO> {
@@ -179,5 +184,175 @@ export class AnalyticsRepository implements IAnalyticsRepository {
         createdAt: t.createdAt,
       })),
     };
+  }
+
+  async getRoomTrends(userId: string): Promise<AnalyticsTrendsDTO> {
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const anyFilter = (f: object) => f as any;
+    const agg = async (model: any, pipeline: object[]): Promise<any[]> =>
+      model.aggregate(anyFilter(pipeline));
+
+    const buildings = await BuildingModel.find(
+      anyFilter({ ownerId: userObjectId }),
+    ).lean();
+    const buildingOids = buildings.map((b) => b._id);
+    const buildingIdStrs = buildings.map((b) => b._id.toString());
+    const buildingNameMap = new Map(
+      buildings.map((b) => [b._id.toString(), b.name]),
+    );
+
+    // ── Monthly trend (last 6 months, zero-filled) ──────────────────────────
+    const now = new Date();
+    const months: { key: string; label: string; start: Date; end: Date }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(
+        now.getFullYear(),
+        now.getMonth() - i + 1,
+        0,
+        23,
+        59,
+        59,
+      );
+      months.push({
+        key: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`,
+        label: start.toLocaleString("default", {
+          month: "short",
+          year: "numeric",
+        }),
+        start,
+        end,
+      });
+    }
+    const rangeStart = months[0].start;
+
+    const revenueAgg = await agg(PaymentRecordModel, [
+      {
+        $match: {
+          buildingId: { $in: buildingOids },
+          status: "paid",
+          paidAt: { $gte: rangeStart },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$paidAt" } },
+          revenue: { $sum: "$amount" },
+        },
+      },
+    ]);
+    const revenueByMonth = new Map(revenueAgg.map((r) => [r._id, r.revenue]));
+
+    const bookingAgg = await agg(BookingModel, [
+      {
+        $match: {
+          buildingId: { $in: buildingOids },
+          createdAt: { $gte: rangeStart },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          bookingsCreated: { $sum: 1 },
+          bookingsConfirmed: {
+            $sum: { $cond: [{ $eq: ["$status", "confirmed"] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+    const bookingsByMonth = new Map(bookingAgg.map((b) => [b._id, b]));
+
+    const monthlyTrend = months.map((m) => ({
+      month: m.key,
+      label: m.label,
+      revenue: revenueByMonth.get(m.key) ?? 0,
+      bookingsCreated: bookingsByMonth.get(m.key)?.bookingsCreated ?? 0,
+      bookingsConfirmed: bookingsByMonth.get(m.key)?.bookingsConfirmed ?? 0,
+    }));
+
+    // ── Room type demand (grouped by bedroom count) ─────────────────────────
+    const allUnits = await UnitModel.find(
+      anyFilter({ buildingId: { $in: buildingIdStrs } }),
+    ).lean();
+    const bedroomsByUnitId = new Map(
+      allUnits.map((u) => [u._id.toString(), u.bedrooms]),
+    );
+
+    const [bookingsForBuildings, inquiriesForBuildings] = await Promise.all([
+      BookingModel.find(anyFilter({ buildingId: { $in: buildingOids } }))
+        .select("unitId")
+        .lean(),
+      InquiryModel.find(anyFilter({ buildingId: { $in: buildingOids } }))
+        .select("unitId")
+        .lean(),
+    ]);
+
+    const demandMap = new Map<
+      number,
+      {
+        bedrooms: number;
+        totalUnits: number;
+        occupiedUnits: number;
+        totalBookings: number;
+        totalInquiries: number;
+      }
+    >();
+    for (const u of allUnits) {
+      const entry = demandMap.get(u.bedrooms) ?? {
+        bedrooms: u.bedrooms,
+        totalUnits: 0,
+        occupiedUnits: 0,
+        totalBookings: 0,
+        totalInquiries: 0,
+      };
+      entry.totalUnits += 1;
+      if (u.isOccupied || u.status === "occupied") entry.occupiedUnits += 1;
+      demandMap.set(u.bedrooms, entry);
+    }
+    for (const b of bookingsForBuildings) {
+      const bedrooms = bedroomsByUnitId.get(b.unitId?.toString() ?? "");
+      if (bedrooms === undefined) continue;
+      const entry = demandMap.get(bedrooms);
+      if (entry) entry.totalBookings += 1;
+    }
+    for (const i of inquiriesForBuildings) {
+      const bedrooms = bedroomsByUnitId.get(i.unitId?.toString() ?? "");
+      if (bedrooms === undefined) continue;
+      const entry = demandMap.get(bedrooms);
+      if (entry) entry.totalInquiries += 1;
+    }
+
+    const roomTypeDemand = [...demandMap.values()]
+      .sort((a, b) => a.bedrooms - b.bedrooms)
+      .map((d) => ({
+        ...d,
+        occupancyRatePercentage:
+          d.totalUnits > 0
+            ? Math.round((d.occupiedUnits / d.totalUnits) * 100)
+            : 0,
+      }));
+
+    // ── Top units by revenue ────────────────────────────────────────────────
+    const topUnitsAgg = await agg(PaymentRecordModel, [
+      { $match: { buildingId: { $in: buildingOids }, status: "paid" } },
+      { $group: { _id: "$unitId", totalRevenue: { $sum: "$amount" } } },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 5 },
+    ]);
+    const unitMap = new Map(allUnits.map((u) => [u._id.toString(), u]));
+    const topUnitsByRevenue = topUnitsAgg
+      .filter((t) => t._id)
+      .map((t) => {
+        const unit = unitMap.get(t._id.toString());
+        return {
+          unitId: t._id.toString(),
+          unitNumber: unit?.unitNumber ?? "Unknown",
+          buildingId: unit?.buildingId?.toString() ?? "",
+          buildingName: buildingNameMap.get(unit?.buildingId?.toString() ?? ""),
+          totalRevenue: t.totalRevenue,
+        };
+      });
+
+    return { monthlyTrend, roomTypeDemand, topUnitsByRevenue };
   }
 }

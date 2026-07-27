@@ -25,4 +25,24 @@ export class AnalyticsController {
         .json({ success: false, message: "Internal Server Error" });
     }
   }
+
+  async getRoomTrends(req: Request, res: Response): Promise<Response> {
+    try {
+      const userId = (req as any).user?.userId;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
+      }
+
+      const trends = await this.analyticsUseCase.getRoomTrends(userId);
+      return res.status(200).json({ success: true, data: trends });
+    } catch (error: any) {
+      logger.error("Error fetching trend analytics:", error);
+      return res
+        .status(500)
+        .json({ success: false, message: "Internal Server Error" });
+    }
+  }
 }
