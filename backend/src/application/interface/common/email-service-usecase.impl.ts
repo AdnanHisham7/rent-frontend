@@ -11,6 +11,11 @@ export interface IEmailService {
     name: string,
     tempPassword: string,
   ): Promise<void>;
+  sendBuilderWelcomeCredentials?(
+    to: string,
+    name: string,
+    tempPassword: string,
+  ): Promise<void>;
   sendNotificationEmail?(
     to: string,
     subject: string,

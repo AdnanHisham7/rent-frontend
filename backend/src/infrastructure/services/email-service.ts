@@ -2,24 +2,44 @@ import { env } from "../config/env";
 import nodemailer from "nodemailer";
 import { IEmailService } from "../../application/interface/common/email-service-usecase.impl";
 import { OtpPurpose } from "../../shared/enums/OtpPurpose.enum";
+import { logger } from "../../shared/logger/logger";
 
 export class EmailService implements IEmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      host: env.SMTP_HOST,
+      port: Number(env.SMTP_PORT) || 587,
+      secure: env.SMTP_SECURE === "true",
+      auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
       tls: {
         rejectUnauthorized: false,
       },
     });
+
+    if (env.SMTP_USER && env.SMTP_PASS) {
+      this.transporter.verify((error) => {
+        if (error) {
+          logger.error(
+            "SMTP connection verification failed — emails will not be delivered:",
+            error,
+          );
+        } else {
+          logger.info("SMTP connection verified — email sending is ready.");
+        }
+      });
+    } else {
+      logger.error(
+        "SMTP_USER / SMTP_PASS are not configured — email sending is disabled.",
+      );
+    }
   }
 
   private from(): string {
-    return process.env.SMTP_USER || "";
+    return env.EMAIL_FROM_NAME
+      ? `"${env.EMAIL_FROM_NAME}" <${env.EMAIL_FROM || env.SMTP_USER}>`
+      : env.EMAIL_FROM || env.SMTP_USER || "";
   }
 
   // ── Generic OTP email (auth flows) ─────────────────────────────────────────
@@ -47,6 +67,31 @@ export class EmailService implements IEmailService {
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
           <h2 style="color:#333">Welcome to PropertySaaS, ${name}!</h2>
           <p>Your payment was successful and your account has been automatically created.</p>
+          <p>You can now log in using the following credentials:</p>
+          <div style="background:#f4f4f4;padding:15px;border-radius:6px;margin:20px 0">
+            <p><strong>Email:</strong> ${to}</p>
+            <p><strong>Password:</strong> ${tempPassword}</p>
+          </div>
+          <p>We strongly recommend changing your password after your first login.</p>
+        </div>
+      `,
+    });
+  }
+
+  // ── Builder Welcome Credentials (manual admin registration) ────────────────
+  async sendBuilderWelcomeCredentials(
+    to: string,
+    name: string,
+    tempPassword: string,
+  ): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.from(),
+      to,
+      subject: "Welcome to PropertySaaS! Here are your login credentials",
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+          <h2 style="color:#333">Welcome to PropertySaaS, ${name}!</h2>
+          <p>An account has been created for you by our team.</p>
           <p>You can now log in using the following credentials:</p>
           <div style="background:#f4f4f4;padding:15px;border-radius:6px;margin:20px 0">
             <p><strong>Email:</strong> ${to}</p>

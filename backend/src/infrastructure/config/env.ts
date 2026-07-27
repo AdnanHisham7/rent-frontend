@@ -30,11 +30,13 @@ export const env = {
   CLOUDINARY_API_KEY: getRequired("CLOUDINARY_API_KEY"),
   CLOUDINARY_API_SECRET: getRequired("CLOUDINARY_API_SECRET"),
 
-  EMAIL_HOST: optional("EMAIL_HOST", "smtp.gmail.com"),
-  EMAIL_PORT: optional("EMAIL_PORT", "587"),
-  EMAIL_USER: optional("EMAIL_USER"),
-  EMAIL_PASS: optional("EMAIL_PASS"),
-  EMAIL_FROM: optional("EMAIL_FROM", "no-reply@brift.in"),
+  SMTP_HOST: optional("SMTP_HOST", "smtp.gmail.com"),
+  SMTP_PORT: optional("SMTP_PORT", "587"),
+  SMTP_SECURE: optional("SMTP_SECURE", "false"),
+  SMTP_USER: optional("SMTP_USER"),
+  SMTP_PASS: optional("SMTP_PASS"),
+  EMAIL_FROM: optional("EMAIL_FROM", "no-reply@example.com"),
+  EMAIL_FROM_NAME: optional("EMAIL_FROM_NAME", "Rental Platform"),
 
   TWILIO_ACCOUNT_SID: optional("TWILIO_ACCOUNT_SID"),
   TWILIO_AUTH_TOKEN: optional("TWILIO_AUTH_TOKEN"),

@@ -168,7 +168,12 @@ export class SuperAdminUseCases implements ISuperAdminUseCases {
       notes?: string;
     },
     adminUserId: string,
-  ): Promise<{ userId: string; message: string }> {
+  ): Promise<{
+    userId: string;
+    message: string;
+    emailSent: boolean;
+    tempPassword?: string;
+  }> {
     const existing = await this.userRepo.findByEmail(data.email);
     if (existing)
       throw new BadRequestError(
@@ -223,13 +228,23 @@ export class SuperAdminUseCases implements ISuperAdminUseCases {
     });
 
     // Send welcome email with credentials
+    let emailSent = true;
     try {
-      await this.emailService.sendWelcomeCredentials(
-        data.email,
-        `${data.firstName} ${data.lastName}`,
-        tempPassword,
-      );
+      if (this.emailService.sendBuilderWelcomeCredentials) {
+        await this.emailService.sendBuilderWelcomeCredentials(
+          data.email,
+          `${data.firstName} ${data.lastName}`,
+          tempPassword,
+        );
+      } else {
+        await this.emailService.sendWelcomeCredentials(
+          data.email,
+          `${data.firstName} ${data.lastName}`,
+          tempPassword,
+        );
+      }
     } catch (e) {
+      emailSent = false;
       logger.error("Welcome email failed:", e);
     }
 
@@ -239,19 +254,26 @@ export class SuperAdminUseCases implements ISuperAdminUseCases {
         entityType: ActivityLogEntityType.USER,
         entityId: user._id!,
         userId: adminUserId,
-        description: `Builder ${data.firstName} ${data.lastName} (${data.email}) registered manually. Cycle: ${data.billingCycle}, Buildings: ${data.numberOfBuildings}, Units: ${data.numberOfUnits}.`,
+        description: `Builder ${data.firstName} ${data.lastName} (${data.email}) registered manually. Cycle: ${data.billingCycle}, Buildings: ${data.numberOfBuildings}, Units: ${data.numberOfUnits}.${
+          emailSent ? "" : " Welcome email delivery FAILED."
+        }`,
         metadata: {
           email: data.email,
           billingCycle: data.billingCycle,
           numberOfBuildings: data.numberOfBuildings,
           numberOfUnits: data.numberOfUnits,
+          emailSent,
         },
       })
       .catch((err) => logger.error(String(err)));
 
     return {
       userId: user._id!,
-      message: `Builder registered. Welcome email with login credentials sent to ${data.email}.`,
+      message: emailSent
+        ? `Builder registered. Welcome email with login credentials sent to ${data.email}.`
+        : `Builder registered, but the welcome email could not be delivered to ${data.email}. Share the temporary password below with them securely.`,
+      emailSent,
+      ...(emailSent ? {} : { tempPassword }),
     };
   }
 
