@@ -20,13 +20,11 @@ export class TenantController {
         status,
         ownerId: scopedUserId,
       });
-      return res
-        .status(200)
-        .json({
-          message: "Tenants fetched.",
-          count: tenants.length,
-          data: tenants,
-        });
+      return res.status(200).json({
+        message: "Tenants fetched.",
+        count: tenants.length,
+        data: tenants,
+      });
     } catch (err) {
       return this.handleError(res, err, "Failed to fetch tenants.");
     }
@@ -137,6 +135,29 @@ export class TenantController {
     }
   };
 
+  setPortalAccess = async (
+    req: Request<{ id: string }>,
+    res: Response,
+  ): Promise<Response> => {
+    try {
+      const { enabled } = req.body as { enabled: boolean };
+      const user = req.user!;
+      const scopedUserId =
+        user.role === "super_admin" ? undefined : user.userId;
+      const tenant = await this.tenantUseCases.setPortalAccess(
+        req.params.id,
+        !!enabled,
+        scopedUserId,
+      );
+      return res.status(200).json({
+        message: `Tenant portal access ${enabled ? "enabled" : "disabled"}.`,
+        data: tenant,
+      });
+    } catch (err) {
+      return this.handleError(res, err, "Failed to update portal access.");
+    }
+  };
+
   private handleError(
     res: Response,
     error: unknown,
@@ -146,11 +167,9 @@ export class TenantController {
       return res
         .status(error.statusCode)
         .json({ message: error.message, suggestion: error.suggestion });
-    return res
-      .status(500)
-      .json({
-        message: fallback,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+    return res.status(500).json({
+      message: fallback,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 }

@@ -8,6 +8,7 @@ export interface ITenantRepository {
     },
   ): Promise<ITenant[]>;
   findByBuildingId(buildingId: string): Promise<ITenant[]>;
+  findByEmail(email: string): Promise<ITenant[]>;
   create(
     data: Omit<ITenant, "_id" | "createdAt" | "updatedAt">,
   ): Promise<ITenant>;

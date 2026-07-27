@@ -49,6 +49,16 @@ export const env = {
   RAZORPAY_KEY_SECRET: optional("RAZORPAY_KEY_SECRET"),
   RAZORPAY_WEBHOOK_SECRET: optional("RAZORPAY_WEBHOOK_SECRET"),
 
+  JWT_TENANT_PORTAL_SECRET: optional("JWT_TENANT_PORTAL_SECRET"),
+  TENANT_PORTAL_SETUP_EXPIRES_IN: optional(
+    "TENANT_PORTAL_SETUP_EXPIRES_IN",
+    "24h",
+  ),
+  TENANT_PORTAL_SESSION_EXPIRES_IN: optional(
+    "TENANT_PORTAL_SESSION_EXPIRES_IN",
+    "7d",
+  ),
+
   REDIS_URL: optional("REDIS_URL", "redis://localhost:6379"),
 
   FRONTEND_URL: optional("FRONTEND_URL", "http://localhost:3000"),

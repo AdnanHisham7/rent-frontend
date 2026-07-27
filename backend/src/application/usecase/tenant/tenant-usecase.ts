@@ -18,6 +18,9 @@ import {
   ActivityLogAction,
   ActivityLogEntityType,
 } from "../../../domain/entities/ActivityLog";
+import { ITenantPortalTokenService } from "../../interface/common/tenant-portal-token-service.interface";
+import { IEmailService } from "../../interface/common/email-service-usecase.impl";
+import { env } from "../../../infrastructure/config/env";
 
 function toResponse(t: ITenant): TenantResponseDTO {
   return {
@@ -41,6 +44,7 @@ function toResponse(t: ITenant): TenantResponseDTO {
     vacateDate: t.vacateDate,
     paidAt: t.paidAt,
     terms: t.terms,
+    portalEnabled: t.portalEnabled,
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
   };
@@ -51,6 +55,8 @@ export class TenantUseCases implements ITenantUseCases {
     private readonly tenantRepository: ITenantRepository,
     private readonly unitRepo: IUnitRepository,
     private readonly activityLogUc: IActivityLogUsecase,
+    private readonly tenantPortalTokenService: ITenantPortalTokenService,
+    private readonly emailService: IEmailService,
   ) {}
 
   async create(data: CreateTenantDTO): Promise<TenantResponseDTO> {
@@ -105,6 +111,7 @@ export class TenantUseCases implements ITenantUseCases {
     const tenant = await this.tenantRepository.create({
       ...data,
       status: "pending",
+      portalEnabled: false,
     });
 
     if (tenant.unitId) {
@@ -372,5 +379,83 @@ export class TenantUseCases implements ITenantUseCases {
       : `Tenant transferred to room ${targetUnit.unitNumber}. Previous room is now available.`;
 
     return { tenant: toResponse(updatedTenant!), message };
+  }
+
+  async setPortalAccess(
+    id: string,
+    enabled: boolean,
+    ownerId?: string,
+  ): Promise<TenantResponseDTO> {
+    const existing = await this.tenantRepository.findById(id);
+    if (!existing)
+      throw new NotFoundError(
+        "Tenant not found.",
+        "Check the tenant ID and try again.",
+      );
+    if (ownerId && existing.createdBy && existing.createdBy !== ownerId) {
+      throw new ForbiddenError(
+        "You do not have access to this tenant.",
+        "This tenant belongs to a different builder.",
+      );
+    }
+
+    const updateData: Partial<ITenant> = { portalEnabled: enabled };
+    if (enabled && !existing.portalActivatedAt) {
+      updateData.portalActivatedAt = new Date();
+    }
+
+    const updated = await this.tenantRepository.update(id, updateData);
+
+    this.activityLogUc
+      .logActivity({
+        action: ActivityLogAction.TENANT_UPDATED,
+        entityType: ActivityLogEntityType.TENANT,
+        entityId: id,
+        buildingId: existing.buildingId,
+        unitId: existing.unitId,
+        userId: ownerId ?? (existing.userId as any),
+        description: `Tenant portal access ${enabled ? "enabled" : "disabled"} for ${existing.firstName} ${existing.lastName}.`,
+      })
+      .catch((err) => logger.error(String(err)));
+
+    if (
+      enabled &&
+      !existing.passwordSetAt &&
+      this.emailService.sendNotificationEmail
+    ) {
+      const setupToken = this.tenantPortalTokenService.generateSetupToken(id);
+      const setupLink = `${env.FRONTEND_URL}/tenant-portal/set-password?token=${setupToken}`;
+      this.emailService
+        .sendNotificationEmail(
+          existing.email,
+          "Your tenant portal is ready",
+          `Hi ${existing.firstName}, your property manager has enabled your tenant portal. Set up your password to get started: ${setupLink} (this link expires in ${env.TENANT_PORTAL_SETUP_EXPIRES_IN}).`,
+        )
+        .catch((err) =>
+          logger.error("Failed to email tenant portal setup link:", err),
+        );
+    } else if (
+      enabled &&
+      existing.passwordSetAt &&
+      this.emailService.sendNotificationEmail
+    ) {
+      this.emailService
+        .sendNotificationEmail(
+          existing.email,
+          "Tenant portal access restored",
+          `Hi ${existing.firstName}, your tenant portal access has been restored. Log in with your existing credentials.`,
+        )
+        .catch((err) => logger.error("Failed to email tenant:", err));
+    } else if (!enabled && this.emailService.sendNotificationEmail) {
+      this.emailService
+        .sendNotificationEmail(
+          existing.email,
+          "Tenant portal access removed",
+          `Hi ${existing.firstName}, your property manager has disabled tenant portal access for now.`,
+        )
+        .catch((err) => logger.error("Failed to email tenant:", err));
+    }
+
+    return toResponse(updated!);
   }
 }

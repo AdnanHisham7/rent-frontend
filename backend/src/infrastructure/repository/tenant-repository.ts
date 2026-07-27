@@ -48,6 +48,13 @@ export class TenantRepository implements ITenantRepository {
     return docs.map((d) => this.toEntity(d));
   }
 
+  async findByEmail(email: string): Promise<ITenant[]> {
+    const docs = await TenantModel.find({
+      email: email.trim().toLowerCase(),
+    }).lean();
+    return docs.map((d) => this.toEntity(d));
+  }
+
   async create(
     data: Omit<ITenant, "_id" | "createdAt" | "updatedAt">,
   ): Promise<ITenant> {

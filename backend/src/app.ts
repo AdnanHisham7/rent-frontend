@@ -29,6 +29,7 @@ import {
   subscriptionController,
   paymentRecordController,
   bookingController,
+  tenantPortalController,
 } from "./infrastructure/DIContainer";
 import { createAgreementRouter } from "./interface/routers/agreement-router";
 import { createPaymentRouter } from "./interface/routers/payment-router";
@@ -49,6 +50,7 @@ import { createUploadRouter } from "./interface/routers/upload-router";
 import { createSubscriptionRouter } from "./interface/routers/subscription-router";
 import { createPaymentRecordRouter } from "./interface/routers/payment-record-router";
 import { createBookingRouter } from "./interface/routers/booking-router";
+import { createTenantPortalRouter } from "./interface/routers/tenant-portal-router";
 
 const createApp = (): Application => {
   const app = express();
@@ -137,6 +139,10 @@ const createApp = (): Application => {
     createPaymentRecordRouter(paymentRecordController),
   );
   app.use("/api/v1/bookings", createBookingRouter(bookingController));
+  app.use(
+    "/api/v1/tenant-portal",
+    createTenantPortalRouter(tenantPortalController),
+  );
 
   app.use((_req: Request, res: Response) =>
     res

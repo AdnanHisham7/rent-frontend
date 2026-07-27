@@ -32,6 +32,11 @@ export const createTenantRouter = (c: TenantController): Router => {
     validate(transferTenantSchema),
     c.transferTenant,
   );
+  router.patch(
+    "/:id/portal-access",
+    authorize(...ADMIN_ROLES),
+    c.setPortalAccess,
+  );
 
   return router;
 };

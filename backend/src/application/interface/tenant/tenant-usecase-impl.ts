@@ -26,4 +26,9 @@ export interface ITenantUseCases {
     adminUserId: string,
     ownerId?: string,
   ): Promise<{ tenant: TenantResponseDTO; message: string }>;
+  setPortalAccess(
+    id: string,
+    enabled: boolean,
+    ownerId?: string,
+  ): Promise<TenantResponseDTO>;
 }
