@@ -57,6 +57,10 @@ import { PaymentRecordRepository } from "../repository/payment-record-repository
 import { PaymentRecordController } from "../../interface/controllers/payment-record-controller";
 import { BuildingAccessUseCase } from "../../application/usecase/building/building-access-usecase";
 import { PaymentRecordUseCases } from "../../application/usecase/payment-record/payment-record-usecase";
+import { BookingRepository } from "../repository/booking-repository";
+import { RazorpayService } from "../services/razorpay-service";
+import { BookingUseCases } from "../../application/usecase/booking/booking-usecase";
+import { BookingController } from "../../interface/controllers/booking-controller";
 
 const userRepository = new UserRepository();
 const tenantRepository = new TenantRepository();
@@ -73,12 +77,14 @@ const expenseRepo = new ExpenseRepository();
 const inquiryRepository = new InquiryRepository();
 const platformSettingRepository = new PlatformSettingRepository();
 const paymentRecordRepository = new PaymentRecordRepository();
+const bookingRepository = new BookingRepository();
 
 const jwtService = new JwtService();
 const emailService = new EmailService();
 const otpService = new RedisOtpService();
 const pdfService = new PdfService();
 const twilioSmsService = new TwilioSmsService();
+const razorpayService = new RazorpayService();
 
 const activityLogUseCase = new ActivityLogUsecaseImpl(activityLogRepository);
 const buildingAccessUseCase = new BuildingAccessUseCase(buildingRepository);
@@ -148,6 +154,15 @@ const inquiryUseCases = new InquiryUseCases(
   buildingRepository,
   unitRepository,
   notificationUseCase,
+);
+const bookingUseCases = new BookingUseCases(
+  bookingRepository,
+  buildingRepository,
+  unitRepository,
+  razorpayService,
+  notificationUseCase,
+  emailService,
+  activityLogUseCase,
 );
 const publicUseCases = new PublicUseCases(
   buildingRepository,
@@ -238,3 +253,4 @@ export const subscriptionController = new SubscriptionController(
 export const paymentRecordController = new PaymentRecordController(
   paymentRecordUseCases,
 );
+export const bookingController = new BookingController(bookingUseCases);
