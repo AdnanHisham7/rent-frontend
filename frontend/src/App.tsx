@@ -2,13 +2,11 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { PageLoader } from '@/components/ui/Avatar';
 import { RoleRoute, GuestRoute, SubscriptionGuard } from '@/routes/guards';
-import { TenantPortalProtectedRoute, TenantPortalGuestRoute } from '@/routes/tenantPortalGuards';
 
 import { PublicLayout }      from '@/components/layout/PublicLayout';
 import { AuthLayout }        from '@/components/layout/AuthLayout';
 import { BuilderLayout }     from '@/components/layout/BuilderLayout';
 import { SuperAdminLayout }  from '@/components/layout/SuperAdminLayout';
-import { TenantPortalLayout } from '@/components/layout/TenantPortalLayout';
 import ScrollToTop from './components/ui/ScrollToTop';
 
 // Public
@@ -37,6 +35,8 @@ const AgreementDetailPage  = lazy(() => import('@/pages/builder/AgreementDetailP
 const DocumentsPage        = lazy(() => import('@/pages/builder/DocumentsPage'));
 const ExpensesPage         = lazy(() => import('@/pages/builder/ExpensesPage'));
 const InquiriesPage        = lazy(() => import('@/pages/builder/InquiriesPage'));
+const OffersPage           = lazy(() => import('@/pages/builder/OffersPage'));
+const BookingsPage         = lazy(() => import('@/pages/builder/BookingsPage'));
 const ManagersPage         = lazy(() => import('@/pages/builder/ManagersPage'));
 const BillingPage          = lazy(() => import('@/pages/builder/BillingPage'));
 const ActivityPage         = lazy(() => import('@/pages/builder/ActivityPage'));
@@ -55,11 +55,6 @@ const SADemoRequestsPage   = lazy(() => import('@/pages/superadmin/DemoRequestsP
 const SAUpgradeRequestsPage = lazy(() => import('@/pages/superadmin/UpgradeRequestsPage'));
 
 const NotFoundPage         = lazy(() => import('@/pages/NotFoundPage'));
-
-// Tenant Portal
-const TenantLoginPage        = lazy(() => import('@/pages/tenant-portal/TenantLoginPage'));
-const TenantSetPasswordPage  = lazy(() => import('@/pages/tenant-portal/TenantSetPasswordPage'));
-const TenantDashboardPage    = lazy(() => import('@/pages/tenant-portal/TenantDashboardPage'));
 
 function App() {
   return (
@@ -110,6 +105,8 @@ function App() {
           <Route path="documents"      element={<DocumentsPage />} />
           <Route path="expenses"       element={<ExpensesPage />} />
           <Route path="inquiries"      element={<InquiriesPage />} />
+          <Route path="offers"         element={<OffersPage />} />
+          <Route path="bookings"       element={<BookingsPage />} />
           <Route path="managers"       element={<ManagersPage />} />
           <Route path="billing"        element={<BillingPage />} />
           <Route path="activity"       element={<ActivityPage />} />
@@ -129,19 +126,6 @@ function App() {
           <Route path="activity"            element={<SAActivityPage />} />
           <Route path="settings"            element={<SASettingsPage />} />
           <Route path="demo-requests"       element={<SADemoRequestsPage />} />
-        </Route>
-
-        <Route path="/tenant-portal/login" element={<AuthLayout />}>
-          <Route index element={<TenantPortalGuestRoute><TenantLoginPage /></TenantPortalGuestRoute>} />
-        </Route>
-        <Route path="/tenant-portal/set-password" element={<AuthLayout />}>
-          <Route index element={<TenantSetPasswordPage />} />
-        </Route>
-        <Route
-          path="/tenant-portal"
-          element={<TenantPortalProtectedRoute><TenantPortalLayout /></TenantPortalProtectedRoute>}
-        >
-          <Route index element={<TenantDashboardPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
