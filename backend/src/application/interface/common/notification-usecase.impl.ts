@@ -1,13 +1,17 @@
-import { Notification, NotificationType, NotificationChannel } from '../../../domain/entities/Notification';
+import {
+  Notification,
+  NotificationType,
+  NotificationChannel,
+} from "../../../domain/entities/Notification";
 
 export interface SendMultiChannelNotificationDTO {
-  userId:            string;
-  title:             string;
-  message:           string;
+  userId: string;
+  title: string;
+  message: string;
   notificationType?: NotificationType;
-  channel?:          NotificationChannel;
-  buildingId?:       string;
-  tenantId?:         string;
+  channel?: NotificationChannel;
+  buildingId?: string;
+  tenantId?: string;
 }
 
 export interface INotificationUseCase {

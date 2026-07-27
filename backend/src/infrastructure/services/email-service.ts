@@ -1,7 +1,7 @@
-import { env } from '../config/env';
-import nodemailer              from 'nodemailer';
-import { IEmailService } from '../../application/interface/common/email-service-usecase.impl';
-import { OtpPurpose } from '../../shared/enums/OtpPurpose.enum';
+import { env } from "../config/env";
+import nodemailer from "nodemailer";
+import { IEmailService } from "../../application/interface/common/email-service-usecase.impl";
+import { OtpPurpose } from "../../shared/enums/OtpPurpose.enum";
 
 export class EmailService implements IEmailService {
   private transporter: nodemailer.Transporter;
@@ -19,21 +19,30 @@ export class EmailService implements IEmailService {
   }
 
   private from(): string {
-    return process.env.SMTP_USER || '';
+    return process.env.SMTP_USER || "";
   }
-  
+
   // ── Generic OTP email (auth flows) ─────────────────────────────────────────
   async sendOtpEmail(to: string, otp: string, purpose: string): Promise<void> {
     const { subject, body } = this.buildOtpContent(otp, purpose);
-    await this.transporter.sendMail({ from: this.from(), to, subject, html: body });
-  }
-
-  // ── Welcome Credentials ────────────────────────────────────────────────────
-  async sendWelcomeCredentials(to: string, name: string, tempPassword: string): Promise<void> {
     await this.transporter.sendMail({
       from: this.from(),
       to,
-      subject: 'Welcome to PropertySaaS! Here are your login credentials',
+      subject,
+      html: body,
+    });
+  }
+
+  // ── Welcome Credentials ────────────────────────────────────────────────────
+  async sendWelcomeCredentials(
+    to: string,
+    name: string,
+    tempPassword: string,
+  ): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.from(),
+      to,
+      subject: "Welcome to PropertySaaS! Here are your login credentials",
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
           <h2 style="color:#333">Welcome to PropertySaaS, ${name}!</h2>
@@ -55,7 +64,7 @@ export class EmailService implements IEmailService {
     tenantName: string,
     signingUrl: string,
     agreementTitle: string,
-    expiresInHours: number
+    expiresInHours: number,
   ): Promise<void> {
     await this.transporter.sendMail({
       from: this.from(),
@@ -84,11 +93,15 @@ export class EmailService implements IEmailService {
   }
 
   // ── Step 5: OTP for agreement signing ──────────────────────────────────────
-  async sendAgreementOtp(to: string, tenantName: string, otp: string): Promise<void> {
+  async sendAgreementOtp(
+    to: string,
+    tenantName: string,
+    otp: string,
+  ): Promise<void> {
     await this.transporter.sendMail({
       from: this.from(),
       to,
-      subject: 'Your Rental Agreement Signing OTP',
+      subject: "Your Rental Agreement Signing OTP",
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
           <h2 style="color:#333">Confirm Your Digital Signature</h2>
@@ -116,7 +129,7 @@ export class EmailService implements IEmailService {
     to: string,
     tenantName: string,
     agreementTitle: string,
-    pdfUrl: string
+    pdfUrl: string,
   ): Promise<void> {
     await this.transporter.sendMail({
       from: this.from(),
@@ -145,7 +158,11 @@ export class EmailService implements IEmailService {
   }
 
   // ── Generic Notification Email ──────────────────────────────────────────────
-  async sendNotificationEmail(to: string, subject: string, message: string): Promise<void> {
+  async sendNotificationEmail(
+    to: string,
+    subject: string,
+    message: string,
+  ): Promise<void> {
     await this.transporter.sendMail({
       from: this.from(),
       to,
@@ -155,21 +172,24 @@ export class EmailService implements IEmailService {
           <h2 style="color:#333">${subject}</h2>
           <p>${message}</p>
         </div>
-      `
+      `,
     });
   }
 
-  private buildOtpContent(otp: string, purpose: string): { subject: string; body: string } {
+  private buildOtpContent(
+    otp: string,
+    purpose: string,
+  ): { subject: string; body: string } {
     if (purpose === OtpPurpose.FORGOT_PASSWORD) {
       return {
-        subject: 'Password Reset OTP',
+        subject: "Password Reset OTP",
         body: `<h2>Password Reset</h2><p>Your OTP:</p>
                <h1 style="letter-spacing:6px">${otp}</h1>
                <p>Expires in <strong>10 minutes</strong>.</p>`,
       };
     }
     return {
-      subject: 'Email Verification OTP',
+      subject: "Email Verification OTP",
       body: `<h2>Verify Your Email</h2><p>Your OTP:</p>
              <h1 style="letter-spacing:6px">${otp}</h1>
              <p>Expires in <strong>10 minutes</strong>.</p>`,

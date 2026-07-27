@@ -20,7 +20,10 @@ export class PlatformSettingRepository implements IPlatformSettingRepository {
     return this.toEntity(doc);
   }
 
-  async update(data: Partial<IPlatformSetting>, updatedBy?: string): Promise<IPlatformSetting> {
+  async update(
+    data: Partial<IPlatformSetting>,
+    updatedBy?: string,
+  ): Promise<IPlatformSetting> {
     const existing = await PlatformSettingModel.findOne();
     if (!existing) {
       const created = await PlatformSettingModel.create({ ...data, updatedBy });

@@ -1,5 +1,10 @@
-export type BillingCycle = 'monthly' | 'yearly';
-export type SubscriptionStatus = 'active' | 'inactive' | 'pending' | 'expired' | 'paid';
+export type BillingCycle = "monthly" | "yearly";
+export type SubscriptionStatus =
+  | "active"
+  | "inactive"
+  | "pending"
+  | "expired"
+  | "paid";
 
 export interface ISubscription {
   _id?: any;
@@ -13,8 +18,8 @@ export interface ISubscription {
   dueDate: Date;
   paidAt?: Date;
   status: SubscriptionStatus;
-  paymentMethod?:    string;
-  stripePaymentId?:  string;
+  paymentMethod?: string;
+  stripePaymentId?: string;
   invoicenumber?: string;
   notes?: string;
   createdAt?: Date;
@@ -29,7 +34,7 @@ export interface ISubscriptionPeriod {
   periodEnd: Date;
   periodLabel: string;
   amount: number;
-  status: 'pending' | 'paid' | 'overdue';
+  status: "pending" | "paid" | "overdue";
   paidAt?: Date;
   paidBy?: any;
   notes?: string;

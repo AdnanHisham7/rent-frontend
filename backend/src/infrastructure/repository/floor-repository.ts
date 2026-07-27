@@ -3,7 +3,6 @@ import type { IFloorRepository } from "../../domain/repository/floor-repository-
 import { FloorModel } from "../db/model/floor-model";
 
 export class FloorRepository implements IFloorRepository {
-
   private toStringId(doc: { _id: unknown }): string {
     return (doc._id as { toString(): string }).toString();
   }
@@ -12,8 +11,8 @@ export class FloorRepository implements IFloorRepository {
     const obj = doc.toObject ? doc.toObject() : { ...doc };
     return {
       ...obj,
-      _id:        this.toStringId(obj),
-      buildingId: obj.buildingId?.toString() ?? '',
+      _id: this.toStringId(obj),
+      buildingId: obj.buildingId?.toString() ?? "",
     };
   }
 
@@ -24,33 +23,36 @@ export class FloorRepository implements IFloorRepository {
   }
 
   async findByBuildingId(buildingId: string): Promise<IFloor[]> {
-    const docs = await FloorModel
-      .find({ buildingId })
+    const docs = await FloorModel.find({ buildingId })
       .sort({ floorNumber: 1 })
       .lean();
     return docs.map((d) => this.toEntity(d));
   }
 
   async findAll(
-    filter?: Partial<Pick<IFloor, 'buildingId' | 'status'>>
+    filter?: Partial<Pick<IFloor, "buildingId" | "status">>,
   ): Promise<IFloor[]> {
     const query: Record<string, any> = {};
     if (filter?.buildingId) query.buildingId = filter.buildingId;
-    if (filter?.status)     query.status     = filter.status;
+    if (filter?.status) query.status = filter.status;
 
     const docs = await FloorModel.find(query).sort({ floorNumber: 1 }).lean();
     return docs.map((d) => this.toEntity(d));
   }
 
-  async create(data: Omit<IFloor, '_id' | 'createdAt' | 'updatedAt'>): Promise<IFloor> {
+  async create(
+    data: Omit<IFloor, "_id" | "createdAt" | "updatedAt">,
+  ): Promise<IFloor> {
     const doc = await FloorModel.create(data);
     return this.toEntity(doc);
   }
 
   async update(id: string, data: Partial<IFloor>): Promise<IFloor | null> {
-    const doc = await FloorModel
-      .findByIdAndUpdate(id, { $set: data }, { new: true })
-      .lean();
+    const doc = await FloorModel.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true },
+    ).lean();
     if (!doc) return null;
     return this.toEntity(doc);
   }
@@ -64,11 +66,17 @@ export class FloorRepository implements IFloorRepository {
     return !!(await FloorModel.exists({ _id: id }));
   }
 
-  async existsByBuildingAndFloorNumber(buildingId: string, floorNumber: number): Promise<boolean> {
+  async existsByBuildingAndFloorNumber(
+    buildingId: string,
+    floorNumber: number,
+  ): Promise<boolean> {
     return !!(await FloorModel.exists({ buildingId, floorNumber }));
   }
 
-  async findByBuildingAndFloorNumber(buildingId: string, floorNumber: number): Promise<IFloor | null> {
+  async findByBuildingAndFloorNumber(
+    buildingId: string,
+    floorNumber: number,
+  ): Promise<IFloor | null> {
     const doc = await FloorModel.findOne({ buildingId, floorNumber }).lean();
     if (!doc) return null;
     return this.toEntity(doc);

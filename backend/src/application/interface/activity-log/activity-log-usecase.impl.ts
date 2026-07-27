@@ -5,7 +5,9 @@ import { IActivityLogUsecase } from "../../usecase/activity-log/activity-log-use
 export class ActivityLogUsecaseImpl implements IActivityLogUsecase {
   constructor(private activityLogRepository: IActivityLogRepository) {}
 
-  async logActivity(data: Omit<IActivityLog, '_id' | 'createdAt' | 'updatedAt'>): Promise<IActivityLog> {
+  async logActivity(
+    data: Omit<IActivityLog, "_id" | "createdAt" | "updatedAt">,
+  ): Promise<IActivityLog> {
     return this.activityLogRepository.create(data);
   }
 
@@ -13,9 +15,17 @@ export class ActivityLogUsecaseImpl implements IActivityLogUsecase {
     return this.activityLogRepository.findAll(filter);
   }
 
-  async getActivitiesPaginated(filter: Partial<IActivityLog> | undefined, page: number, limit: number) {
+  async getActivitiesPaginated(
+    filter: Partial<IActivityLog> | undefined,
+    page: number,
+    limit: number,
+  ) {
     const skip = (page - 1) * limit;
-    const { data, total } = await this.activityLogRepository.findAllPaginated(filter, skip, limit);
+    const { data, total } = await this.activityLogRepository.findAllPaginated(
+      filter,
+      skip,
+      limit,
+    );
     return { data, total, page, limit };
   }
 

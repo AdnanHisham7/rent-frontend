@@ -1,14 +1,18 @@
-import { Notification, NotificationType, NotificationChannel, ICreateNotification } from '../../domain/entities/Notification';
-import { INotificationRepository } from '../../domain/repository/notification-repository';
-import { NotificationModel } from '../db/model/notification-model';
+import {
+  Notification,
+  NotificationType,
+  NotificationChannel,
+  ICreateNotification,
+} from "../../domain/entities/Notification";
+import { INotificationRepository } from "../../domain/repository/notification-repository";
+import { NotificationModel } from "../db/model/notification-model";
 
 export class NotificationRepositoryImpl implements INotificationRepository {
-
   private mapToEntity(doc: any): Notification {
     const obj = doc.toObject ? doc.toObject() : { ...doc };
     return new Notification(
       obj._id.toString(),
-      obj.userId?.toString() ?? obj.recipientId?.toString() ?? '',
+      obj.userId?.toString() ?? obj.recipientId?.toString() ?? "",
       obj.title,
       obj.message,
       obj.notificationType as NotificationType,
@@ -25,7 +29,13 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     );
   }
 
-  async create(data: ICreateNotification & { type?: string; metadata?: Record<string, any>; recipientRole?: string }): Promise<Notification> {
+  async create(
+    data: ICreateNotification & {
+      type?: string;
+      metadata?: Record<string, any>;
+      recipientRole?: string;
+    },
+  ): Promise<Notification> {
     const created = await NotificationModel.create(data);
     return this.mapToEntity(created);
   }
@@ -44,7 +54,7 @@ export class NotificationRepositoryImpl implements INotificationRepository {
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();
-    return notifications.map(n => this.mapToEntity(n));
+    return notifications.map((n) => this.mapToEntity(n));
   }
 
   async findByRecipientRole(role: string): Promise<Notification[]> {
@@ -52,7 +62,7 @@ export class NotificationRepositoryImpl implements INotificationRepository {
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();
-    return notifications.map(n => this.mapToEntity(n));
+    return notifications.map((n) => this.mapToEntity(n));
   }
 
   async findById(id: string): Promise<Notification | null> {
@@ -64,7 +74,7 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     const notification = await NotificationModel.findByIdAndUpdate(
       id,
       { isRead: true, readAt: new Date() },
-      { new: true }
+      { new: true },
     ).lean();
     return notification ? this.mapToEntity(notification) : null;
   }
@@ -77,7 +87,7 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     }
     await NotificationModel.updateMany(
       { $or: conditions },
-      { isRead: true, readAt: new Date() }
+      { isRead: true, readAt: new Date() },
     );
   }
 
@@ -85,7 +95,11 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     const conditions: any[] = [{ userId, isRead: false }];
     if (role) {
       conditions.push({ recipientRole: role, isRead: false, userId: null });
-      conditions.push({ recipientRole: role, isRead: false, userId: { $exists: false } });
+      conditions.push({
+        recipientRole: role,
+        isRead: false,
+        userId: { $exists: false },
+      });
     }
     return NotificationModel.countDocuments({ $or: conditions });
   }

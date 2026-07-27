@@ -4,17 +4,28 @@ import { UnitResponseDTO } from "../unit/unit.dto";
 
 export interface PublicBuildingCardDTO extends BuildingResponseDTO {
   availableUnitsCount: number;
-  occupiedUnitsCount:  number;
-  minRent:             number | null;
-  maxRent:             number | null;
+  occupiedUnitsCount: number;
+  minRent: number | null;
+  maxRent: number | null;
 }
 
 export interface PublicBuildingDetailDTO extends PublicBuildingCardDTO {
-  floors: (FloorResponseDTO & { availableUnitsCount: number; occupiedUnitsCount: number })[];
+  floors: (FloorResponseDTO & {
+    availableUnitsCount: number;
+    occupiedUnitsCount: number;
+  })[];
 }
 
 export interface PublicUnitDetailDTO extends UnitResponseDTO {
-  building: { _id: string; name: string; slug?:string; type: string; location: BuildingResponseDTO['location']; amenities?: string[]; images?: string[] };
+  building: {
+    _id: string;
+    name: string;
+    slug?: string;
+    type: string;
+    location: BuildingResponseDTO["location"];
+    amenities?: string[];
+    images?: string[];
+  };
 }
 
 export interface PublicFiltersDTO {

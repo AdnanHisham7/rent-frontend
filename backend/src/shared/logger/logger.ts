@@ -1,12 +1,12 @@
-import { createLogger, format, transports } from 'winston';
+import { createLogger, format, transports } from "winston";
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === "production";
 
 const devFormat = format.combine(
   format.colorize(),
-  format.timestamp({ format: 'HH:mm:ss' }),
+  format.timestamp({ format: "HH:mm:ss" }),
   format.printf(({ level, message, timestamp, ...meta }) => {
-    const extras = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    const extras = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : "";
     return `${timestamp} [${level}] ${message}${extras}`;
   }),
 );
@@ -18,7 +18,7 @@ const prodFormat = format.combine(
 );
 
 export const logger = createLogger({
-  level: isProduction ? 'info' : 'debug',
+  level: isProduction ? "info" : "debug",
   format: isProduction ? prodFormat : devFormat,
   transports: [new transports.Console()],
 });

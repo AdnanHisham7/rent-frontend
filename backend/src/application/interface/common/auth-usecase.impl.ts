@@ -8,8 +8,8 @@ import type {
   ResetPasswordRequestDTO,
   SendOtpRequestDTO,
   VerifyEmailRequestDTO,
-  ValidateOtpRequestDTO
-} from '../../dtos/user-usecaase/authdto';
+  ValidateOtpRequestDTO,
+} from "../../dtos/user-usecaase/authdto";
 
 export interface IAuthUseCases {
   login(data: LoginRequestDTO): Promise<LoginResponseDTO>;

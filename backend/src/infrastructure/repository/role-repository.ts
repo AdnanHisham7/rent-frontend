@@ -1,9 +1,8 @@
-import type { IRole } from '../../domain/entities/Role';
-import type { IRoleRepository } from '../../domain/repository/role-repository-impl';
-import { RoleModel } from '../db/model/role-model';
+import type { IRole } from "../../domain/entities/Role";
+import type { IRoleRepository } from "../../domain/repository/role-repository-impl";
+import { RoleModel } from "../db/model/role-model";
 
 export class RoleRepository implements IRoleRepository {
-
   private toStringId(doc: { _id: unknown }): string {
     return (doc._id as { toString(): string }).toString();
   }
@@ -21,7 +20,7 @@ export class RoleRepository implements IRoleRepository {
   }
 
   async create(
-    data: Omit<IRole, '_id' | 'createdAt' | 'updatedAt'>
+    data: Omit<IRole, "_id" | "createdAt" | "updatedAt">,
   ): Promise<IRole> {
     const doc = await RoleModel.create(data);
     return { ...doc.toObject(), _id: this.toStringId(doc) };

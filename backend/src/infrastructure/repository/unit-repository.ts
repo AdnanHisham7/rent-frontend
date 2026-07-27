@@ -1,5 +1,6 @@
 import { IUnit } from "../../domain/entities/Unit";
 import { IUnitRepository } from "../../domain/repository/unit-repository-impl";
+import { AgreementModel } from "../db/model/agreement-model";
 import { UnitModel } from "../db/model/unit-model";
 
 export class UnitRepository implements IUnitRepository {
@@ -22,46 +23,69 @@ export class UnitRepository implements IUnitRepository {
     return this.toEntity(doc);
   }
 
-  async findAll(filter?: Partial<Pick<IUnit, 'buildingId' | 'status' | 'isOccupied'>>): Promise<IUnit[]> {
+  async findAll(
+    filter?: Partial<Pick<IUnit, "buildingId" | "status" | "isOccupied">>,
+  ): Promise<IUnit[]> {
     const query: Record<string, any> = {};
     if (filter?.buildingId) query.buildingId = filter.buildingId;
     if (filter?.status) query.status = filter.status;
     if (filter?.isOccupied !== undefined) query.isOccupied = filter.isOccupied;
 
-    const docs = await UnitModel.find(query).sort({ floorNumber: 1, unitNumber: 1 }).lean();
-    return docs.map(d => this.toEntity(d));
+    const docs = await UnitModel.find(query)
+      .sort({ floorNumber: 1, unitNumber: 1 })
+      .lean();
+    return docs.map((d) => this.toEntity(d));
   }
 
   async findByBuildingId(buildingId: string): Promise<IUnit[]> {
-    const docs = await UnitModel.find({ buildingId }).sort({ floorNumber: 1, unitNumber: 1 }).lean();
-    return docs.map(d => this.toEntity(d));
+    const docs = await UnitModel.find({ buildingId })
+      .sort({ floorNumber: 1, unitNumber: 1 })
+      .lean();
+    return docs.map((d) => this.toEntity(d));
   }
 
-  async findByBuildingAndFloor(buildingId: string, floorNumber: string): Promise<IUnit[]> {
-    const docs = await UnitModel.find({ buildingId, floorNumber }).sort({ unitNumber: 1 }).lean();
-    return docs.map(d => this.toEntity(d));
+  async findByBuildingAndFloor(
+    buildingId: string,
+    floorNumber: string,
+  ): Promise<IUnit[]> {
+    const docs = await UnitModel.find({ buildingId, floorNumber })
+      .sort({ unitNumber: 1 })
+      .lean();
+    return docs.map((d) => this.toEntity(d));
   }
 
   async findByBuildingIds(buildingIds: string[]): Promise<IUnit[]> {
     if (buildingIds.length === 0) return [];
-    const docs = await UnitModel.find({ buildingId: { $in: buildingIds } }).lean();
-    return docs.map(d => this.toEntity(d));
+    const docs = await UnitModel.find({
+      buildingId: { $in: buildingIds },
+    }).lean();
+    return docs.map((d) => this.toEntity(d));
   }
 
-  async countByBuildingId(buildingId: string, filter?: Partial<Pick<IUnit, 'status' | 'isOccupied'>>): Promise<number> {
+  async countByBuildingId(
+    buildingId: string,
+    filter?: Partial<Pick<IUnit, "status" | "isOccupied">>,
+  ): Promise<number> {
     const query: Record<string, any> = { buildingId };
     if (filter?.status) query.status = filter.status;
     if (filter?.isOccupied !== undefined) query.isOccupied = filter.isOccupied;
     return UnitModel.countDocuments(query);
   }
 
-  async create(data: Omit<IUnit, '_id' | 'createdAt' | 'updatedAt'>): Promise<IUnit> {
+  async create(
+    data: Omit<IUnit, "_id" | "createdAt" | "updatedAt">,
+  ): Promise<IUnit> {
     const doc = await UnitModel.create(data);
+
     return this.toEntity(doc);
   }
 
   async update(id: string, data: Partial<IUnit>): Promise<IUnit | null> {
-    const doc = await UnitModel.findByIdAndUpdate(id, { $set: data }, { new: true }).lean();
+    const doc = await UnitModel.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true },
+    ).lean();
     if (!doc) return null;
     return this.toEntity(doc);
   }
@@ -71,7 +95,11 @@ export class UnitRepository implements IUnitRepository {
     return !!result;
   }
 
-  async deleteByBuildingAndFloor(buildingId: string, floorNumber: string, onlyAvailable: boolean): Promise<number> {
+  async deleteByBuildingAndFloor(
+    buildingId: string,
+    floorNumber: string,
+    onlyAvailable: boolean,
+  ): Promise<number> {
     const query: Record<string, any> = { buildingId, floorNumber };
     if (onlyAvailable) query.isOccupied = false;
     const result = await UnitModel.deleteMany(query);

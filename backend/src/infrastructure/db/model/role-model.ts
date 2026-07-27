@@ -21,7 +21,7 @@ const RoleSchema = new Schema<IRoleDocument>(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const RoleModel = mongoose.model<IRoleDocument>("Role", RoleSchema);

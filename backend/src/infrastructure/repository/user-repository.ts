@@ -1,9 +1,11 @@
-import type { IUser } from '../../domain/entities/User';
-import type { IUserRepository, UserListFilter } from '../../domain/repository/user-repository-impl';
-import { UserModel } from '../db/model/user-model';
+import type { IUser } from "../../domain/entities/User";
+import type {
+  IUserRepository,
+  UserListFilter,
+} from "../../domain/repository/user-repository-impl";
+import { UserModel } from "../db/model/user-model";
 
 export class UserRepository implements IUserRepository {
-
   private toStringId(doc: { _id: unknown }): string {
     return (doc._id as { toString(): string }).toString();
   }
@@ -12,9 +14,9 @@ export class UserRepository implements IUserRepository {
     const obj = doc.toObject ? doc.toObject() : { ...doc };
     return {
       ...obj,
-      _id:            this.toStringId(obj),
-      building_id:    obj.building_id?.toString()    ?? undefined,
-      ownerId:        obj.ownerId?.toString()         ?? undefined,
+      _id: this.toStringId(obj),
+      building_id: obj.building_id?.toString() ?? undefined,
+      ownerId: obj.ownerId?.toString() ?? undefined,
       subscriptionId: obj.subscriptionId?.toString() ?? undefined,
     };
   }
@@ -22,11 +24,11 @@ export class UserRepository implements IUserRepository {
   private buildQuery(filter?: UserListFilter): Record<string, any> {
     const query: Record<string, any> = {};
     if (!filter) return query;
-    if (filter.role)    query.role = filter.role;
-    if (filter.status)  query.status = filter.status;
+    if (filter.role) query.role = filter.role;
+    if (filter.status) query.status = filter.status;
     if (filter.ownerId) query.ownerId = filter.ownerId;
     if (filter.search) {
-      const re = new RegExp(filter.search.trim(), 'i');
+      const re = new RegExp(filter.search.trim(), "i");
       query.$or = [{ email: re }, { first_name: re }, { last_name: re }];
     }
     return query;
@@ -53,10 +55,18 @@ export class UserRepository implements IUserRepository {
   }
 
   // ── findAllPaginated ─────────────────────────────────────────────────────
-  async findAllPaginated(filter: UserListFilter, skip: number, limit: number): Promise<{ data: IUser[]; total: number }> {
+  async findAllPaginated(
+    filter: UserListFilter,
+    skip: number,
+    limit: number,
+  ): Promise<{ data: IUser[]; total: number }> {
     const query = this.buildQuery(filter);
     const [docs, total] = await Promise.all([
-      UserModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      UserModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
       UserModel.countDocuments(query),
     ]);
     return { data: docs.map((d) => this.toEntity(d)), total };
@@ -75,14 +85,14 @@ export class UserRepository implements IUserRepository {
 
   // ── create ───────────────────────────────────────────────────────────────
   async create(
-    data: Omit<IUser, '_id' | 'createdAt' | 'updatedAt'>
+    data: Omit<IUser, "_id" | "createdAt" | "updatedAt">,
   ): Promise<IUser> {
     const doc = await UserModel.create(data);
     return this.toEntity(doc);
   }
 
   // ── updateStatus ─────────────────────────────────────────────────────────
-  async updateStatus(userId: string, status: IUser['status']): Promise<void> {
+  async updateStatus(userId: string, status: IUser["status"]): Promise<void> {
     await UserModel.updateOne({ _id: userId }, { $set: { status } });
   }
 
@@ -90,7 +100,7 @@ export class UserRepository implements IUserRepository {
   async updateEmailVerified(userId: string): Promise<void> {
     await UserModel.updateOne(
       { _id: userId },
-      { $set: { email_verified: true, status: 'active' } }
+      { $set: { email_verified: true, status: "active" } },
     );
   }
 
@@ -98,18 +108,18 @@ export class UserRepository implements IUserRepository {
   async updatePassword(email: string, hashedPassword: string): Promise<void> {
     await UserModel.updateOne(
       { email: email.toLowerCase() },
-      { $set: { password: hashedPassword } }
+      { $set: { password: hashedPassword } },
     );
   }
 
   // ── updateRefreshToken ────────────────────────────────────────────────────
   async updateRefreshToken(
     userId: string,
-    hashedToken: string | null
+    hashedToken: string | null,
   ): Promise<void> {
     await UserModel.updateOne(
       { _id: userId },
-      { $set: { refresh_token: hashedToken } }
+      { $set: { refresh_token: hashedToken } },
     );
   }
 
@@ -117,15 +127,17 @@ export class UserRepository implements IUserRepository {
   async updateLastLogin(userId: string): Promise<void> {
     await UserModel.updateOne(
       { _id: userId },
-      { $set: { lastLoginAt: new Date() } }
+      { $set: { lastLoginAt: new Date() } },
     );
   }
 
   // ── update ────────────────────────────────────────────────────────────────
   async update(userId: string, data: Partial<IUser>): Promise<IUser | null> {
-    const doc = await UserModel
-      .findByIdAndUpdate(userId, { $set: data }, { new: true })
-      .lean();
+    const doc = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: data },
+      { new: true },
+    ).lean();
     if (!doc) return null;
     return this.toEntity(doc);
   }

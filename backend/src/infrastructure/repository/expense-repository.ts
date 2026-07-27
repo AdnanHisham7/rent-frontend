@@ -1,10 +1,9 @@
-import mongoose from 'mongoose';
-import { ExpenseCategory, IExpense } from '../../domain/entities/Expence';
-import { IExpenseRepository } from '../../domain/repository/expense-repository-impl';
-import { ExpenseModel } from '../db/model/expense-model';
+import mongoose from "mongoose";
+import { ExpenseCategory, IExpense } from "../../domain/entities/Expense";
+import { IExpenseRepository } from "../../domain/repository/expense-repository-impl";
+import { ExpenseModel } from "../db/model/expense-model";
 
 export class ExpenseRepository implements IExpenseRepository {
-
   private toStringId(doc: { _id: unknown }): string {
     return (doc._id as { toString(): string }).toString();
   }
@@ -13,10 +12,10 @@ export class ExpenseRepository implements IExpenseRepository {
     const obj = doc.toObject ? doc.toObject() : { ...doc };
     return {
       ...obj,
-      _id:        this.toStringId(obj),
-      buildingId: obj.buildingId?.toString() ?? '',
-      unitId:     obj.unitId?.toString()     ?? undefined,
-      recordedBy: obj.recordedBy?.toString() ?? '',
+      _id: this.toStringId(obj),
+      buildingId: obj.buildingId?.toString() ?? "",
+      unitId: obj.unitId?.toString() ?? undefined,
+      recordedBy: obj.recordedBy?.toString() ?? "",
     };
   }
 
@@ -28,16 +27,18 @@ export class ExpenseRepository implements IExpenseRepository {
 
   // ── findAll ───────────────────────────────────────────────────────────────────
   async findAll(
-    filter?: Partial<Pick<IExpense, 'buildingId' | 'unitId' | 'category' | 'status'>>
+    filter?: Partial<
+      Pick<IExpense, "buildingId" | "unitId" | "category" | "status">
+    >,
   ): Promise<IExpense[]> {
     const q: Record<string, any> = {};
     if (filter?.buildingId) q.buildingId = filter.buildingId;
-    if (filter?.unitId)     q.unitId     = filter.unitId;
-    if (filter?.category)   q.category   = filter.category;
-    if (filter?.status)     q.status     = filter.status;
+    if (filter?.unitId) q.unitId = filter.unitId;
+    if (filter?.category) q.category = filter.category;
+    if (filter?.status) q.status = filter.status;
 
     const docs = await ExpenseModel.find(q).sort({ date: -1 }).lean();
-    return docs.map(d => this.toEntity(d));
+    return docs.map((d) => this.toEntity(d));
   }
 
   // ── findByDateRange ───────────────────────────────────────────────────────────
@@ -45,30 +46,34 @@ export class ExpenseRepository implements IExpenseRepository {
     buildingId: string,
     from: Date,
     to: Date,
-    category?: ExpenseCategory
+    category?: ExpenseCategory,
   ): Promise<IExpense[]> {
     const q: Record<string, any> = {
       buildingId,
       date: { $gte: from, $lte: to },
-      status: { $ne: 'cancelled' },
+      status: { $ne: "cancelled" },
     };
     if (category) q.category = category;
 
     const docs = await ExpenseModel.find(q).sort({ date: -1 }).lean();
-    return docs.map(d => this.toEntity(d));
+    return docs.map((d) => this.toEntity(d));
   }
 
   // ── create ────────────────────────────────────────────────────────────────────
-  async create(data: Omit<IExpense, '_id' | 'createdAt' | 'updatedAt'>): Promise<IExpense> {
+  async create(
+    data: Omit<IExpense, "_id" | "createdAt" | "updatedAt">,
+  ): Promise<IExpense> {
     const doc = await ExpenseModel.create(data);
     return this.toEntity(doc);
   }
 
   // ── update ────────────────────────────────────────────────────────────────────
   async update(id: string, data: Partial<IExpense>): Promise<IExpense | null> {
-    const doc = await ExpenseModel
-      .findByIdAndUpdate(id, { $set: data }, { new: true })
-      .lean();
+    const doc = await ExpenseModel.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true },
+    ).lean();
     return doc ? this.toEntity(doc) : null;
   }
 
@@ -85,18 +90,18 @@ export class ExpenseRepository implements IExpenseRepository {
   async getTotalByCategory(
     buildingId: string,
     from: Date,
-    to: Date
+    to: Date,
   ): Promise<{ category: ExpenseCategory; total: number }[]> {
     return ExpenseModel.aggregate([
       {
         $match: {
           buildingId: new mongoose.Types.ObjectId(buildingId),
-          date:   { $gte: from, $lte: to },
-          status: { $ne: 'cancelled' },
+          date: { $gte: from, $lte: to },
+          status: { $ne: "cancelled" },
         },
       },
-      { $group: { _id: '$category', total: { $sum: '$amount' } } },
-      { $project: { category: '$_id', total: 1, _id: 0 } },
+      { $group: { _id: "$category", total: { $sum: "$amount" } } },
+      { $project: { category: "$_id", total: 1, _id: 0 } },
       { $sort: { total: -1 } },
     ]);
   }
@@ -105,23 +110,23 @@ export class ExpenseRepository implements IExpenseRepository {
   async getDailyTotals(
     buildingId: string,
     from: Date,
-    to: Date
+    to: Date,
   ): Promise<{ date: string; total: number }[]> {
     return ExpenseModel.aggregate([
       {
         $match: {
           buildingId: new mongoose.Types.ObjectId(buildingId),
-          date:   { $gte: from, $lte: to },
-          status: { $ne: 'cancelled' },
+          date: { $gte: from, $lte: to },
+          status: { $ne: "cancelled" },
         },
       },
       {
         $group: {
-          _id:   { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-          total: { $sum: '$amount' },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          total: { $sum: "$amount" },
         },
       },
-      { $project: { date: '$_id', total: 1, _id: 0 } },
+      { $project: { date: "$_id", total: 1, _id: 0 } },
       { $sort: { date: 1 } },
     ]);
   }
@@ -129,26 +134,26 @@ export class ExpenseRepository implements IExpenseRepository {
   // ── getMonthlyTotals (aggregation) ───────────────────────────────────────────
   async getMonthlyTotals(
     buildingId: string,
-    year: number
+    year: number,
   ): Promise<{ month: number; total: number }[]> {
     const from = new Date(`${year}-01-01`);
-    const to   = new Date(`${year + 1}-01-01`);
+    const to = new Date(`${year + 1}-01-01`);
 
     return ExpenseModel.aggregate([
       {
         $match: {
           buildingId: new mongoose.Types.ObjectId(buildingId),
-          date:   { $gte: from, $lt: to },
-          status: { $ne: 'cancelled' },
+          date: { $gte: from, $lt: to },
+          status: { $ne: "cancelled" },
         },
       },
       {
         $group: {
-          _id:   { $month: '$date' },
-          total: { $sum: '$amount' },
+          _id: { $month: "$date" },
+          total: { $sum: "$amount" },
         },
       },
-      { $project: { month: '$_id', total: 1, _id: 0 } },
+      { $project: { month: "$_id", total: 1, _id: 0 } },
       { $sort: { month: 1 } },
     ]);
   }

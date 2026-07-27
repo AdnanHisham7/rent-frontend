@@ -1,12 +1,15 @@
-import { logger } from '../../../shared/logger/logger';
-import bcrypt from 'bcryptjs';
-import { IRegisterUseCase } from '../../interface/common/register-usecase.impl';
-import { IUserRepository } from '../../../domain/repository/user-repository-impl';
-import { IEmailService } from '../../interface/common/email-service-usecase.impl';
-import { IOtpService } from '../../interface/common/otp-servie-usecase.impl';
-import { RegisterRequestDTO, RegisterResponseDTO } from '../../dtos/user-usecaase/register.dto';
-import { BadRequestError } from '../../../shared/error/app-error';
-import { OtpPurpose } from '../../../shared/enums/OtpPurpose.enum';
+import { logger } from "../../../shared/logger/logger";
+import bcrypt from "bcryptjs";
+import { IRegisterUseCase } from "../../interface/common/register-usecase.impl";
+import { IUserRepository } from "../../../domain/repository/user-repository-impl";
+import { IEmailService } from "../../interface/common/email-service-usecase.impl";
+import { IOtpService } from "../../interface/common/otp-servie-usecase.impl";
+import {
+  RegisterRequestDTO,
+  RegisterResponseDTO,
+} from "../../dtos/user-usecaase/register.dto";
+import { BadRequestError } from "../../../shared/error/app-error";
+import { OtpPurpose } from "../../../shared/enums/OtpPurpose.enum";
 
 const SALT_ROUNDS = 12;
 
@@ -17,8 +20,8 @@ function generateOtp(): string {
 export class RegisterUseCase implements IRegisterUseCase {
   constructor(
     private readonly userRepository: IUserRepository,
-    private readonly emailService:   IEmailService,
-    private readonly otpService:     IOtpService,
+    private readonly emailService: IEmailService,
+    private readonly otpService: IOtpService,
   ) {}
 
   async register(data: RegisterRequestDTO): Promise<RegisterResponseDTO> {
@@ -26,8 +29,8 @@ export class RegisterUseCase implements IRegisterUseCase {
     const existing = await this.userRepository.findByEmail(data.email);
     if (existing) {
       throw new BadRequestError(
-        'An account with this email already exists.',
-        'Please use a different email or login to your existing account.'
+        "An account with this email already exists.",
+        "Please use a different email or login to your existing account.",
       );
     }
 
@@ -38,33 +41,38 @@ export class RegisterUseCase implements IRegisterUseCase {
     //    - role = 'admin'  (every public registrant is a building owner)
     //    - status = 'pending_verification' (must verify email before login)
     const user = await this.userRepository.create({
-      email:          data.email.toLowerCase().trim(),
-      password:       hashedPassword,
-      first_name:     data.first_name.trim(),
-      last_name:      data.last_name.trim(),
-      phone_number:   data.phone_number,
-      role:           'admin',
-      status:         'pending_verification',
+      email: data.email.toLowerCase().trim(),
+      password: hashedPassword,
+      first_name: data.first_name.trim(),
+      last_name: data.last_name.trim(),
+      phone_number: data.phone_number,
+      role: "admin",
+      status: "pending_verification",
       email_verified: false,
       phone_verified: false,
-      paymentStatus:  false,
-      refresh_token:  null,
+      paymentStatus: false,
+      refresh_token: null,
     });
 
     // 4. Generate OTP and save to Redis, then send email (non-blocking)
     const otp = generateOtp();
-    await this.otpService.saveOtp(user.email, OtpPurpose.EMAIL_VERIFICATION, otp);
+    await this.otpService.saveOtp(
+      user.email,
+      OtpPurpose.EMAIL_VERIFICATION,
+      otp,
+    );
     this.emailService
       .sendOtpEmail(user.email, otp, OtpPurpose.EMAIL_VERIFICATION)
-      .catch((err) => logger.error('[EmailService] OTP send failed:', err));
+      .catch((err) => logger.error("[EmailService] OTP send failed:", err));
 
     return {
-      message: 'Account created. Please check your email for the OTP to verify your account.',
+      message:
+        "Account created. Please check your email for the OTP to verify your account.",
       user: {
-        _id:        user._id!,
-        email:      user.email,
+        _id: user._id!,
+        email: user.email,
         first_name: user.first_name,
-        last_name:  user.last_name,
+        last_name: user.last_name,
       },
     };
   }
