@@ -13,12 +13,12 @@ import {
   BadRequestError,
   ForbiddenError,
 } from "../../shared/error/app-error";
-import { IUserRepository } from "../../domain/repository/user-repository-impl";
+import { IUserUseCase } from "../../application/interface/user/user-usecase.impl";
 
 export class BuildingController {
   constructor(
     private readonly uc: IBuildingUseCases,
-    private readonly userRepo: IUserRepository,
+    private readonly userUseCase: IUserUseCase,
   ) {}
 
   private static getSingleParam(value: string | string[] | undefined): string {
@@ -52,7 +52,7 @@ export class BuildingController {
       return { ownerId: user.userId };
     }
     if (user.role === "manager") {
-      const manager = await this.userRepo.findById(user.userId);
+      const manager = await this.userUseCase.getProfile(user.userId);
       if (!manager?.ownerId) {
         throw new ForbiddenError(
           "This manager account is not linked to a builder.",

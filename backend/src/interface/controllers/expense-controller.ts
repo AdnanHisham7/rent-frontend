@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
-import { AppError, ForbiddenError } from "../../shared/error/app-error";
+import { AppError } from "../../shared/error/app-error";
 import { IExpenseUseCases } from "../../application/interface/expense/expense-usecase.impl";
-import { IBuildingRepository } from "../../domain/repository/building-repository-impl";
+import { IBuildingAccessUseCase } from "../../application/interface/building/building-access-usecase.impl";
 
 export class ExpenseController {
   constructor(
     private readonly expenseUseCases: IExpenseUseCases,
-    private readonly buildingRepo: IBuildingRepository,
+    private readonly buildingAccessUc: IBuildingAccessUseCase,
   ) {}
 
   private err(res: Response, e: unknown, fb: string): Response {
@@ -14,12 +14,10 @@ export class ExpenseController {
       return res
         .status(e.statusCode)
         .json({ message: e.message, suggestion: e.suggestion });
-    return res
-      .status(500)
-      .json({
-        message: fb,
-        error: e instanceof Error ? e.message : "Unknown error",
-      });
+    return res.status(500).json({
+      message: fb,
+      error: e instanceof Error ? e.message : "Unknown error",
+    });
   }
 
   private async assertBuildingOwnership(
@@ -27,19 +25,7 @@ export class ExpenseController {
     userId: string,
     role: string,
   ): Promise<void> {
-    if (role === "super_admin") return;
-    const building = await this.buildingRepo.findById(buildingId);
-    if (!building)
-      throw new ForbiddenError(
-        "Building not found or access denied.",
-        "Provide a valid buildingId you own or manage.",
-      );
-    if (building.ownerId !== userId && building.managerId !== userId) {
-      throw new ForbiddenError(
-        "You do not have access to this building.",
-        "This building belongs to a different builder.",
-      );
-    }
+    return this.buildingAccessUc.assertOwnership(buildingId, userId, role);
   }
 
   getAll = async (req: Request, res: Response): Promise<Response> => {
@@ -58,15 +44,8 @@ export class ExpenseController {
       if (buildingId) {
         filter.buildingId = buildingId;
       } else if (user.role !== "super_admin") {
-        const buildings = await this.buildingRepo.findAll({
-          ownerId: user.userId,
-        });
-        const managerBuildings = await this.buildingRepo.findAll({
-          managerId: user.userId,
-        });
-        const allBuildingIds = [
-          ...new Set([...buildings, ...managerBuildings].map((b) => b._id!)),
-        ];
+        const allBuildingIds =
+          await this.buildingAccessUc.getAccessibleBuildingIds(user.userId);
         if (!allBuildingIds.length)
           return res
             .status(200)
@@ -89,13 +68,11 @@ export class ExpenseController {
       if (unitId) filter.unitId = unitId;
 
       const expenses = await this.expenseUseCases.getAll(filter);
-      return res
-        .status(200)
-        .json({
-          message: "Expenses fetched.",
-          count: expenses.length,
-          data: expenses,
-        });
+      return res.status(200).json({
+        message: "Expenses fetched.",
+        count: expenses.length,
+        data: expenses,
+      });
     } catch (e) {
       return this.err(res, e, "Failed to fetch expenses.");
     }
@@ -238,13 +215,11 @@ export class ExpenseController {
         to,
         category as any,
       );
-      return res
-        .status(200)
-        .json({
-          message: "Expenses fetched.",
-          count: expenses.length,
-          data: expenses,
-        });
+      return res.status(200).json({
+        message: "Expenses fetched.",
+        count: expenses.length,
+        data: expenses,
+      });
     } catch (e) {
       return this.err(res, e, "Failed to fetch expenses by date range.");
     }

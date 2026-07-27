@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import { IAgreementUseCases } from "../../application/interface/agreement/agreement-usecase.impl";
-import { AppError, ForbiddenError } from "../../shared/error/app-error";
-import { IBuildingRepository } from "../../domain/repository/building-repository-impl";
+import { AppError } from "../../shared/error/app-error";
+import { IBuildingAccessUseCase } from "../../application/interface/building/building-access-usecase.impl";
 
 export class AgreementController {
   constructor(
     private readonly agreementUseCases: IAgreementUseCases,
-    private readonly buildingRepo: IBuildingRepository,
+    private readonly buildingAccessUc: IBuildingAccessUseCase,
   ) {}
 
   private async assertBuildingOwnership(
@@ -14,19 +14,7 @@ export class AgreementController {
     userId: string,
     role: string,
   ): Promise<void> {
-    if (role === "super_admin" || !buildingId) return;
-    const building = await this.buildingRepo.findById(buildingId);
-    if (!building)
-      throw new ForbiddenError(
-        "Building not found or access denied.",
-        "Provide a valid buildingId you own or manage.",
-      );
-    if (building.ownerId !== userId && building.managerId !== userId) {
-      throw new ForbiddenError(
-        "You do not have access to this building.",
-        "This building belongs to a different builder.",
-      );
-    }
+    return this.buildingAccessUc.assertOwnership(buildingId, userId, role);
   }
 
   create = async (req: Request, res: Response): Promise<Response> => {
@@ -82,15 +70,8 @@ export class AgreementController {
             user.role,
           );
         } else {
-          const owned = await this.buildingRepo.findAll({
-            ownerId: user.userId,
-          });
-          const managed = await this.buildingRepo.findAll({
-            managerId: user.userId,
-          });
-          const allBuildingIds = [
-            ...new Set([...owned, ...managed].map((b) => b._id!)),
-          ];
+          const allBuildingIds =
+            await this.buildingAccessUc.getAccessibleBuildingIds(user.userId);
           if (!allBuildingIds.length)
             return res
               .status(200)
@@ -105,13 +86,11 @@ export class AgreementController {
             ),
           );
           const all = results.flat();
-          return res
-            .status(200)
-            .json({
-              message: "Agreements fetched.",
-              count: all.length,
-              data: all,
-            });
+          return res.status(200).json({
+            message: "Agreements fetched.",
+            count: all.length,
+            data: all,
+          });
         }
       }
 
@@ -120,13 +99,11 @@ export class AgreementController {
         buildingId,
         status: status as any,
       });
-      return res
-        .status(200)
-        .json({
-          message: "Agreements fetched.",
-          count: agreements.length,
-          data: agreements,
-        });
+      return res.status(200).json({
+        message: "Agreements fetched.",
+        count: agreements.length,
+        data: agreements,
+      });
     } catch (err) {
       return this.handleError(res, err, "Failed to fetch agreements.");
     }
@@ -260,12 +237,10 @@ export class AgreementController {
         .status(error.statusCode)
         .json({ message: error.message, suggestion: error.suggestion });
     }
-    return res
-      .status(500)
-      .json({
-        message: fallback,
-        suggestion: "Please try again later.",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+    return res.status(500).json({
+      message: fallback,
+      suggestion: "Please try again later.",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 }

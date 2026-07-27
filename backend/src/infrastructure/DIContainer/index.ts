@@ -55,6 +55,8 @@ import { SubscriptionUseCases } from "../../application/usecase/subscription/sub
 import { SubscriptionController } from "../../interface/controllers/subscription-controller";
 import { PaymentRecordRepository } from "../repository/payment-record-repository";
 import { PaymentRecordController } from "../../interface/controllers/payment-record-controller";
+import { BuildingAccessUseCase } from "../../application/usecase/building/building-access-usecase";
+import { PaymentRecordUseCases } from "../../application/usecase/payment-record/payment-record-usecase";
 
 const userRepository = new UserRepository();
 const tenantRepository = new TenantRepository();
@@ -79,6 +81,7 @@ const pdfService = new PdfService();
 const twilioSmsService = new TwilioSmsService();
 
 const activityLogUseCase = new ActivityLogUsecaseImpl(activityLogRepository);
+const buildingAccessUseCase = new BuildingAccessUseCase(buildingRepository);
 const userUseCase = new UserUseCase(userRepository);
 const registerUseCase = new RegisterUseCase(
   userRepository,
@@ -185,17 +188,23 @@ const expenseUseCases = new ExpenseUseCases(
   expenseRepo,
   new TenantPaymentAdapter(tenantRepository) as any,
 );
+const paymentRecordUseCases = new PaymentRecordUseCases(
+  paymentRecordRepository,
+  tenantRepository,
+  buildingAccessUseCase,
+  activityLogUseCase,
+);
 
 export const authController = new AuthController(authUseCases, registerUseCase);
 export const bootstrapController = new BootstrapController(bootstrapUseCase);
 export const tenantController = new TenantController(tenantUseCases);
 export const documentController = new DocumentController(
   documentUseCases,
-  buildingRepository,
+  buildingAccessUseCase,
 );
 export const agreementController = new AgreementController(
   agreementUseCases,
-  buildingRepository,
+  buildingAccessUseCase,
 );
 export const unitController = new UnitController(unitUseCases);
 export const notificationController = new NotificationController(
@@ -205,16 +214,16 @@ export const analyticsController = new AnalyticsController(analyticsUseCase);
 export const userController = new UserController(userUseCase);
 export const activityLogController = new ActivityLogController(
   activityLogUseCase,
-  buildingRepository,
+  buildingAccessUseCase,
 );
 export const buildingController = new BuildingController(
   buildingUseCases,
-  userRepository,
+  userUseCase,
 );
 export const floorController = new FloorController(floorUseCases);
 export const expenseController = new ExpenseController(
   expenseUseCases,
-  buildingRepository,
+  buildingAccessUseCase,
 );
 export const superAdminController = new SuperAdminController(
   superAdminUseCases,
@@ -227,8 +236,5 @@ export const subscriptionController = new SubscriptionController(
   subscriptionUseCases,
 );
 export const paymentRecordController = new PaymentRecordController(
-  paymentRecordRepository,
-  tenantRepository,
-  buildingRepository,
-  activityLogUseCase,
+  paymentRecordUseCases,
 );

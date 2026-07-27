@@ -1,26 +1,8 @@
-import {
-  PaymentRecordModel,
-  IPaymentRecord,
-  PaymentRecordStatus,
-} from "../db/model/payment-record-model";
+import { PaymentRecordModel } from "../db/model/payment-record-model";
+import { IPaymentRecord } from "../../domain/entities/PaymentRecord";
+import { IPaymentRecordRepository } from "../../domain/repository/payment-record-repository-impl";
 
-export interface CreatePaymentRecordInput {
-  tenantId: string;
-  buildingId: string;
-  unitId?: string;
-  periodLabel: string;
-  periodStart: Date;
-  periodEnd: Date;
-  amount: number;
-  status?: PaymentRecordStatus;
-  paidAt?: Date;
-  method?: string;
-  notes?: string;
-  receiptUrl?: string;
-  recordedBy: string;
-}
-
-export class PaymentRecordRepository {
+export class PaymentRecordRepository implements IPaymentRecordRepository {
   private toEntity(doc: any): IPaymentRecord {
     const obj = doc.toObject ? doc.toObject() : { ...doc };
     return {
@@ -33,7 +15,9 @@ export class PaymentRecordRepository {
     };
   }
 
-  async create(data: CreatePaymentRecordInput): Promise<IPaymentRecord> {
+  async create(
+    data: Omit<IPaymentRecord, "_id" | "createdAt" | "updatedAt">,
+  ): Promise<IPaymentRecord> {
     const doc = await PaymentRecordModel.create(data);
     return this.toEntity(doc);
   }

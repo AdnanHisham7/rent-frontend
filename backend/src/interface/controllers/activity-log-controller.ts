@@ -1,17 +1,15 @@
 import { Request, Response } from "express";
 import { IActivityLogUsecase } from "../../application/usecase/activity-log/activity-log-usecase";
-import { IBuildingRepository } from "../../domain/repository/building-repository-impl";
+import { IBuildingAccessUseCase } from "../../application/interface/building/building-access-usecase.impl";
 
 export class ActivityLogController {
   constructor(
     private activityLogUsecase: IActivityLogUsecase,
-    private buildingRepo: IBuildingRepository,
+    private buildingAccessUc: IBuildingAccessUseCase,
   ) {}
 
   private async getBuilderBuildingIds(userId: string): Promise<string[]> {
-    const owned = await this.buildingRepo.findAll({ ownerId: userId });
-    const managed = await this.buildingRepo.findAll({ managerId: userId });
-    return [...new Set([...owned, ...managed].map((b) => b._id!))];
+    return this.buildingAccessUc.getAccessibleBuildingIds(userId);
   }
 
   private async assertBuildingScope(
@@ -21,11 +19,16 @@ export class ActivityLogController {
     const user = req.user!;
     if (user.role === "super_admin") return true;
     if (!buildingId) return false;
-    const building = await this.buildingRepo.findById(buildingId);
-    if (!building) return false;
-    return (
-      building.ownerId === user.userId || building.managerId === user.userId
-    );
+    try {
+      await this.buildingAccessUc.assertOwnership(
+        buildingId,
+        user.userId,
+        user.role,
+      );
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async logActivity(req: Request, res: Response): Promise<void> {
@@ -56,12 +59,10 @@ export class ActivityLogController {
         if (buildingId) {
           const allowed = await this.assertBuildingScope(req, buildingId);
           if (!allowed) {
-            res
-              .status(403)
-              .json({
-                success: false,
-                message: "You do not have access to this building.",
-              });
+            res.status(403).json({
+              success: false,
+              message: "You do not have access to this building.",
+            });
             return;
           }
           const filter = { ...rest, buildingId };
@@ -105,15 +106,13 @@ export class ActivityLogController {
         const skip = (pg - 1) * lim;
         const slice = merged.slice(skip, skip + lim);
 
-        res
-          .status(200)
-          .json({
-            success: true,
-            data: slice,
-            total: merged.length,
-            page: pg,
-            limit: lim,
-          });
+        res.status(200).json({
+          success: true,
+          data: slice,
+          total: merged.length,
+          page: pg,
+          limit: lim,
+        });
         return;
       }
 
@@ -147,12 +146,10 @@ export class ActivityLogController {
           activity.buildingId,
         );
         if (!allowed) {
-          res
-            .status(403)
-            .json({
-              success: false,
-              message: "You do not have access to this activity log.",
-            });
+          res.status(403).json({
+            success: false,
+            message: "You do not have access to this activity log.",
+          });
           return;
         }
       }
@@ -167,12 +164,10 @@ export class ActivityLogController {
       const buildingId = req.params.buildingId as string;
       const allowed = await this.assertBuildingScope(req, buildingId);
       if (!allowed) {
-        res
-          .status(403)
-          .json({
-            success: false,
-            message: "You do not have access to this building.",
-          });
+        res.status(403).json({
+          success: false,
+          message: "You do not have access to this building.",
+        });
         return;
       }
       const activities = await this.activityLogUsecase.getActivitiesByBuilding(
@@ -188,12 +183,10 @@ export class ActivityLogController {
     try {
       const { userId } = req.params;
       if (req.user!.role !== "super_admin" && req.user!.userId !== userId) {
-        res
-          .status(403)
-          .json({
-            success: false,
-            message: "You can only view your own activity.",
-          });
+        res.status(403).json({
+          success: false,
+          message: "You can only view your own activity.",
+        });
         return;
       }
       const activities = await this.activityLogUsecase.getActivitiesByUser(
