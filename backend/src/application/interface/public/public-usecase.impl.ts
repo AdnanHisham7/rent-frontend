@@ -4,8 +4,8 @@ import {
   PublicBuildingDetailDTO,
   PublicFiltersDTO,
   PublicUnitDetailDTO,
+  PublicUnitDTO,
 } from "../../dtos/public/public.dto";
-import { UnitResponseDTO } from "../../dtos/unit/unit.dto";
 
 export interface PublicBuildingListFilter {
   city?: string;
@@ -26,7 +26,7 @@ export interface IPublicUseCases {
   ): Promise<PaginatedResult<PublicBuildingCardDTO>>;
   getFeaturedBuildings(limit: number): Promise<PublicBuildingCardDTO[]>;
   getBuildingDetail(id: string): Promise<PublicBuildingDetailDTO>;
-  listUnitsForBuilding(buildingId: string): Promise<UnitResponseDTO[]>;
+  listUnitsForBuilding(buildingId: string): Promise<PublicUnitDTO[]>;
   getUnitDetail(id: string): Promise<PublicUnitDetailDTO>;
   getFilters(): Promise<PublicFiltersDTO>;
 }

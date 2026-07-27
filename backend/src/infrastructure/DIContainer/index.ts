@@ -64,6 +64,9 @@ import { BookingController } from "../../interface/controllers/booking-controlle
 import { TenantPortalTokenService } from "../services/tenant-portal-token-service";
 import { TenantPortalUseCases } from "../../application/usecase/tenant-portal/tenant-portal-usecase";
 import { TenantPortalController } from "../../interface/controllers/tenant-portal-controller";
+import { OfferRepository } from "../repository/offer-repository";
+import { OfferUseCases } from "../../application/usecase/offer/offer-usecase";
+import { OfferController } from "../../interface/controllers/offer-controller";
 
 const userRepository = new UserRepository();
 const tenantRepository = new TenantRepository();
@@ -81,6 +84,7 @@ const inquiryRepository = new InquiryRepository();
 const platformSettingRepository = new PlatformSettingRepository();
 const paymentRecordRepository = new PaymentRecordRepository();
 const bookingRepository = new BookingRepository();
+const offerRepository = new OfferRepository();
 
 const jwtService = new JwtService();
 const emailService = new EmailService();
@@ -183,6 +187,14 @@ const publicUseCases = new PublicUseCases(
   buildingRepository,
   unitRepository,
   floorRepository,
+  offerRepository,
+);
+const offerUseCases = new OfferUseCases(
+  offerRepository,
+  unitRepository,
+  buildingRepository,
+  buildingAccessUseCase,
+  activityLogUseCase,
 );
 const superAdminUseCases = new SuperAdminUseCases(
   userRepository,
@@ -272,3 +284,4 @@ export const bookingController = new BookingController(bookingUseCases);
 export const tenantPortalController = new TenantPortalController(
   tenantPortalUseCases,
 );
+export const offerController = new OfferController(offerUseCases);

@@ -1,6 +1,8 @@
 import { IBuildingRepository } from "../../../domain/repository/building-repository-impl";
 import { IUnitRepository } from "../../../domain/repository/unit-repository-impl";
 import { IFloorRepository } from "../../../domain/repository/floor-repository-impl";
+import { IOfferRepository } from "../../../domain/repository/offer-repository-impl";
+import { IOffer } from "../../../domain/entities/Offer";
 import { NotFoundError } from "../../../shared/error/app-error";
 import {
   IPublicUseCases,
@@ -11,11 +13,35 @@ import {
   PublicBuildingDetailDTO,
   PublicFiltersDTO,
   PublicUnitDetailDTO,
+  PublicUnitDTO,
+  PublicUnitOfferDTO,
 } from "../../dtos/public/public.dto";
 import { PaginatedResult } from "../../dtos/super-admin/super-admin.dto";
 import { IBuilding } from "../../../domain/entities/Building";
 import { IUnit } from "../../../domain/entities/Unit";
 import { UnitResponseDTO } from "../../dtos/unit/unit.dto";
+
+function applyOffer(unit: IUnit, offer?: IOffer): PublicUnitDTO {
+  let effectiveRent = unit.rentAmount;
+  let activeOffer: PublicUnitOfferDTO | undefined;
+
+  if (offer) {
+    effectiveRent =
+      offer.discountType === "percentage"
+        ? Math.round(unit.rentAmount * (1 - offer.discountValue / 100))
+        : Math.max(0, unit.rentAmount - offer.discountValue);
+    activeOffer = {
+      _id: offer._id!,
+      title: offer.title,
+      description: offer.description,
+      discountType: offer.discountType,
+      discountValue: offer.discountValue,
+      endDate: offer.endDate,
+    };
+  }
+
+  return { ...(unit as UnitResponseDTO), activeOffer, effectiveRent };
+}
 
 function buildingCard(b: IBuilding, units: IUnit[]): PublicBuildingCardDTO {
   const available = units.filter(
@@ -40,6 +66,7 @@ export class PublicUseCases implements IPublicUseCases {
     private readonly buildingRepo: IBuildingRepository,
     private readonly unitRepo: IUnitRepository,
     private readonly floorRepo: IFloorRepository,
+    private readonly offerRepo: IOfferRepository,
   ) {}
 
   async listBuildings(
@@ -168,12 +195,17 @@ export class PublicUseCases implements IPublicUseCases {
     return { ...card, floors: floorsWithStats };
   }
 
-  async listUnitsForBuilding(idOrSlug: string): Promise<UnitResponseDTO[]> {
+  async listUnitsForBuilding(idOrSlug: string): Promise<PublicUnitDTO[]> {
     const building = await this.buildingRepo.findByIdOrSlug(idOrSlug);
     if (!building || !building.isPublished)
       throw new NotFoundError("Listing not found.");
     const units = await this.unitRepo.findByBuildingId(building._id!);
-    return units as UnitResponseDTO[];
+    const activeOffers = await this.offerRepo.findActiveByUnitIds(
+      units.map((u) => u._id!),
+      new Date(),
+    );
+    const offerByUnit = new Map(activeOffers.map((o) => [o.unitId, o]));
+    return units.map((u) => applyOffer(u, offerByUnit.get(u._id!)));
   }
 
   async getUnitDetail(id: string): Promise<PublicUnitDetailDTO> {
@@ -185,8 +217,12 @@ export class PublicUseCases implements IPublicUseCases {
     this.unitRepo
       .update(id, { viewCount: (unit.viewCount ?? 0) + 1 })
       .catch(() => {});
+    const [activeOffer] = await this.offerRepo.findActiveByUnitIds(
+      [id],
+      new Date(),
+    );
     return {
-      ...(unit as UnitResponseDTO),
+      ...applyOffer(unit, activeOffer),
       building: {
         _id: building._id!,
         name: building.name,

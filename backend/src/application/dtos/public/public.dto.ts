@@ -1,6 +1,21 @@
 import { BuildingResponseDTO } from "../building/building.dto";
 import { FloorResponseDTO } from "../floor/floor.dto";
 import { UnitResponseDTO } from "../unit/unit.dto";
+import { OfferDiscountType } from "../../../domain/entities/Offer";
+
+export interface PublicUnitOfferDTO {
+  _id: string;
+  title: string;
+  description?: string;
+  discountType: OfferDiscountType;
+  discountValue: number;
+  endDate: Date;
+}
+
+export interface PublicUnitDTO extends UnitResponseDTO {
+  activeOffer?: PublicUnitOfferDTO;
+  effectiveRent: number;
+}
 
 export interface PublicBuildingCardDTO extends BuildingResponseDTO {
   availableUnitsCount: number;
@@ -16,7 +31,7 @@ export interface PublicBuildingDetailDTO extends PublicBuildingCardDTO {
   })[];
 }
 
-export interface PublicUnitDetailDTO extends UnitResponseDTO {
+export interface PublicUnitDetailDTO extends PublicUnitDTO {
   building: {
     _id: string;
     name: string;
