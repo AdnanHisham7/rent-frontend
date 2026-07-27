@@ -28,6 +28,7 @@ import {
   uploadController,
   subscriptionController,
   paymentRecordController,
+  bookingController,
 } from "./infrastructure/DIContainer";
 import { createAgreementRouter } from "./interface/routers/agreement-router";
 import { createPaymentRouter } from "./interface/routers/payment-router";
@@ -47,6 +48,7 @@ import { createPublicRouter } from "./interface/routers/public-router";
 import { createUploadRouter } from "./interface/routers/upload-router";
 import { createSubscriptionRouter } from "./interface/routers/subscription-router";
 import { createPaymentRecordRouter } from "./interface/routers/payment-record-router";
+import { createBookingRouter } from "./interface/routers/booking-router";
 
 const createApp = (): Application => {
   const app = express();
@@ -85,6 +87,11 @@ const createApp = (): Application => {
   // Stripe webhook needs raw body
   app.use(
     "/api/v1/payments/webhook",
+    express.raw({ type: "application/json" }),
+  );
+  // Razorpay webhook needs raw body
+  app.use(
+    "/api/v1/bookings/webhook",
     express.raw({ type: "application/json" }),
   );
   app.use(express.json({ limit: "10mb" }));
@@ -129,6 +136,7 @@ const createApp = (): Application => {
     "/api/v1/payment-records",
     createPaymentRecordRouter(paymentRecordController),
   );
+  app.use("/api/v1/bookings", createBookingRouter(bookingController));
 
   app.use((_req: Request, res: Response) =>
     res

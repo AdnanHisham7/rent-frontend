@@ -39,6 +39,12 @@ export enum ActivityLogAction {
   DEMO_REQUEST_RECEIVED = "demo_request_received",
   UPGRADE_REQUEST_RECEIVED = "upgrade_request_received",
   ADMIN_REVENUE_RECORDED = "admin_revenue_recorded",
+  BOOKING_CREATED = "booking_created",
+  BOOKING_PAYMENT_RECEIVED = "booking_payment_received",
+  BOOKING_CONFIRMED = "booking_confirmed",
+  BOOKING_REJECTED = "booking_rejected",
+  BOOKING_REFUND_INITIATED = "booking_refund_initiated",
+  BOOKING_REFUND_PROCESSED = "booking_refund_processed",
 }
 
 export enum ActivityLogEntityType {
@@ -51,6 +57,7 @@ export enum ActivityLogEntityType {
   DOCUMENT = "document",
   SUBSCRIPTION = "subscription",
   DEMO_REQUEST = "demo_request",
+  BOOKING = "booking",
 }
 
 export interface IActivityLog {
