@@ -1,43 +1,85 @@
 export interface TransactionRecord {
-  _id:          string;
-  tenantId:     string;
-  tenantName:   string;
-  buildingId:   string;
+  _id: string;
+  tenantId: string;
+  tenantName: string;
+  buildingId: string;
   buildingName?: string;
-  unitId?:      string;
-  unitNumber?:  string;
-  periodLabel:  string;
-  periodStart:  string;
-  periodEnd:    string;
-  amount:       number;
-  status:       string;
-  paidAt?:      string;
-  method?:      string;
-  notes?:       string;
-  createdAt?:   string;
+  unitId?: string;
+  unitNumber?: string;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  amount: number;
+  status: string;
+  paidAt?: string;
+  method?: string;
+  notes?: string;
+  createdAt?: string;
 }
 
 export interface PendingPayment {
-  tenantId:    string;
-  tenantName:  string;
-  unitId?:     string;
-  amount:      number;
+  tenantId: string;
+  tenantName: string;
+  unitId?: string;
+  amount: number;
   periodLabel: string;
-  dueDate?:    string;
+  dueDate?: string;
+}
+
+export interface MonthlyTrendPoint {
+  month: string;
+  label: string;
+  revenue: number;
+  bookingsCreated: number;
+  bookingsConfirmed: number;
+}
+
+export interface RoomTypeDemand {
+  bedrooms: number;
+  totalUnits: number;
+  occupiedUnits: number;
+  occupancyRatePercentage: number;
+  totalBookings: number;
+  totalInquiries: number;
+}
+
+export interface TopUnitByRevenue {
+  unitId: string;
+  unitNumber: string;
+  buildingId: string;
+  buildingName?: string;
+  totalRevenue: number;
+}
+
+export interface AnalyticsTrends {
+  monthlyTrend: MonthlyTrendPoint[];
+  roomTypeDemand: RoomTypeDemand[];
+  topUnitsByRevenue: TopUnitByRevenue[];
 }
 
 export interface DashboardMetrics {
-  totalRevenue:        number;
-  pendingRevenue:      number;
+  totalRevenue: number;
+  pendingRevenue: number;
   occupancyRate: {
-    totalUnits:      number;
-    occupiedUnits:   number;
-    vacantUnits:     number;
-    ratePercentage:  number;
+    totalUnits: number;
+    occupiedUnits: number;
+    vacantUnits: number;
+    ratePercentage: number;
   };
-  revenueByBuilding:    { buildingId: string; revenue: number }[];
-  recentlyRentedUnits:  { unitId: string; buildingId: string; rentAmount: number; startDate: string }[];
-  expiringAgreements:   { agreementId: string; unitId: string; tenantId: string; endDate: string; monthlyRent: number }[];
-  pendingPayments:      PendingPayment[];
-  recentTransactions:   TransactionRecord[];
+  revenueByBuilding: { buildingId: string; revenue: number }[];
+  recentlyRentedUnits: {
+    unitId: string;
+    buildingId: string;
+    rentAmount: number;
+    startDate: string;
+  }[];
+  expiringAgreements: {
+    agreementId: string;
+    unitId: string;
+    tenantId: string;
+    endDate: string;
+    monthlyRent: number;
+  }[];
+  pendingPayments: PendingPayment[];
+  recentTransactions: TransactionRecord[];
 }
